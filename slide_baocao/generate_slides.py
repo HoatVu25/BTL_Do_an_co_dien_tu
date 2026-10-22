@@ -2,95 +2,140 @@ import os
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_SHAPE
+
+ASSETS = r"d:\WORKING PLACE\DoAn\slide_baocao\assets"
+IMG_ARCH    = os.path.join(ASSETS, "image1.png")
+IMG_AS608   = os.path.join(ASSETS, "image2.jpg")
+IMG_RC522   = os.path.join(ASSETS, "image3.jpg")
+IMG_KEYPAD  = os.path.join(ASSETS, "image4.jpg")
+IMG_WEB     = os.path.join(ASSETS, "web_dashboard.png")
+IMG_VERCEL  = os.path.join(ASSETS, "vercel_deploy.png")
+IMG_PCB     = os.path.join(ASSETS, "pcb_layout_preview.png")
 
 def create_presentation():
     prs = Presentation()
-    # 16:9 widescreen: 13.333 x 7.5 inches
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
     blank_layout = prs.slide_layouts[6]
 
-    # Bảng màu UET Academic / Minimalist
-    NAVY_MAIN   = RGBColor(11, 35, 71)      # #0B2347 - Xanh Navy UET
-    ACCENT_BLUE = RGBColor(16, 85, 154)     # #10559A - Xanh đậm điểm nhấn
-    CARD_BG     = RGBColor(245, 247, 250)   # #F5F7FA - Xám nhạt nền thẻ
-    CARD_BORDER = RGBColor(220, 226, 235)   # #DCE2EB - Viền thẻ
-    TEXT_DARK   = RGBColor(24, 30, 42)      # #181E2A - Chữ chính
-    TEXT_MUTED  = RGBColor(100, 110, 125)   # #646E7D - Chữ phụ
+    NAVY_MAIN   = RGBColor(11, 35, 71)      # #0B2347
+    ACCENT_BLUE = RGBColor(16, 85, 154)     # #10559A
+    CARD_BG     = RGBColor(246, 248, 251)   # #F6F8FB
+    CARD_BORDER = RGBColor(218, 225, 235)   # #DAE1EB
+    TEXT_DARK   = RGBColor(20, 28, 40)      # #141C28
+    TEXT_MUTED  = RGBColor(95, 108, 125)    # #5F6C7D
     WHITE       = RGBColor(255, 255, 255)
-    GREEN_OK    = RGBColor(16, 140, 78)     # #108C4E - Điểm nhấn thành công
-    AMBER_WARN  = RGBColor(190, 110, 10)    # #BE6E0A - Điểm nhấn tiến độ
+    GREEN_BG    = RGBColor(236, 253, 245)
+    GREEN_TEXT  = RGBColor(16, 135, 72)
 
-    def add_header(slide, title_text, category_text="BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ"):
-        # Dải màu trang trí phía trên
-        strip = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(0.12))
+    def add_header(slide, title_text, slide_no, category_text="BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ (NHÓM 13)"):
+        strip = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(0.11))
         strip.fill.solid()
         strip.fill.fore_color.rgb = ACCENT_BLUE
         strip.line.fill.background()
 
-        # Category
-        cat_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.4), Inches(11.7), Inches(0.35))
+        cat_box = slide.shapes.add_textbox(Inches(0.65), Inches(0.32), Inches(10.5), Inches(0.3))
         tf_c = cat_box.text_frame
-        tf_c.word_wrap = True
         tf_c.margin_left = tf_c.margin_top = tf_c.margin_right = tf_c.margin_bottom = 0
         p_c = tf_c.paragraphs[0]
-        p_c.text = category_text.upper()
-        p_c.font.size = Pt(11)
+        p_c.text = category_text
+        p_c.font.size = Pt(10.5)
         p_c.font.bold = True
         p_c.font.color.rgb = ACCENT_BLUE
 
-        # Title
-        t_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.75), Inches(11.7), Inches(0.6))
+        t_box = slide.shapes.add_textbox(Inches(0.65), Inches(0.62), Inches(11.5), Inches(0.55))
         tf_t = t_box.text_frame
-        tf_t.word_wrap = True
         tf_t.margin_left = tf_t.margin_top = tf_t.margin_right = tf_t.margin_bottom = 0
         p_t = tf_t.paragraphs[0]
         p_t.text = title_text
-        p_t.font.size = Pt(22)
+        p_t.font.size = Pt(21)
         p_t.font.bold = True
         p_t.font.color.rgb = NAVY_MAIN
 
-    def add_card(slide, left, top, width, height, title, items, subtitle=None, highlight=False):
-        # Card Background Box
+        # Footer
+        f_box = slide.shapes.add_textbox(Inches(0.65), Inches(7.05), Inches(12.0), Inches(0.3))
+        tf_f = f_box.text_frame
+        p_f = tf_f.paragraphs[0]
+        p_f.text = f"Trường Đại học Công nghệ – ĐHQGHN  |  Nhóm 13: Nguyễn Tuấn Sơn – Vũ Hữu Hoạt                                                                                     Slide {slide_no} / 10"
+        p_f.font.size = Pt(9.5)
+        p_f.font.color.rgb = TEXT_MUTED
+
+    def add_card(slide, left, top, width, height, title, items, subtitle=None, highlight=False, font_pt=11.5):
         card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
         card.fill.solid()
         card.fill.fore_color.rgb = WHITE if highlight else CARD_BG
         card.line.color.rgb = ACCENT_BLUE if highlight else CARD_BORDER
         card.line.width = Pt(1.5 if highlight else 1)
 
-        # Text Frame
-        tb = slide.shapes.add_textbox(left + Inches(0.25), top + Inches(0.2), width - Inches(0.5), height - Inches(0.4))
+        tb = slide.shapes.add_textbox(left + Inches(0.22), top + Inches(0.18), width - Inches(0.44), height - Inches(0.32))
         tf = tb.text_frame
         tf.word_wrap = True
         tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
 
-        # Title
         p_title = tf.paragraphs[0]
         p_title.text = title
-        p_title.font.size = Pt(15)
+        p_title.font.size = Pt(14.5)
         p_title.font.bold = True
         p_title.font.color.rgb = ACCENT_BLUE if highlight else NAVY_MAIN
-        p_title.space_after = Pt(4)
+        p_title.space_after = Pt(3)
 
         if subtitle:
             p_sub = tf.add_paragraph()
             p_sub.text = subtitle
-            p_sub.font.size = Pt(11)
+            p_sub.font.size = Pt(10.5)
             p_sub.font.color.rgb = TEXT_MUTED
-            p_sub.space_after = Pt(8)
+            p_sub.space_after = Pt(7)
 
-        # Items
         for it in items:
             p_it = tf.add_paragraph()
             p_it.text = f"•  {it}"
-            p_it.font.size = Pt(12)
+            p_it.font.size = Pt(font_pt)
             p_it.font.color.rgb = TEXT_DARK
-            p_it.space_after = Pt(5)
+            p_it.space_after = Pt(4.5)
+
+    def add_image_frame(slide, img_path, left, top, width, height, caption=None):
+        frame = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+        frame.fill.solid()
+        frame.fill.fore_color.rgb = WHITE
+        frame.line.color.rgb = CARD_BORDER
+        frame.line.width = Pt(1.2)
+
+        pad = Inches(0.12)
+        cap_h = Inches(0.38) if caption else Inches(0)
+        avail_w = width - pad * 2
+        avail_h = height - pad * 2 - cap_h
+
+        if os.path.exists(img_path):
+            from PIL import Image as PILImage
+            with PILImage.open(img_path) as im:
+                iw, ih = im.size
+            ratio = iw / ih
+            box_ratio = avail_w / avail_h
+            if ratio > box_ratio:
+                pic_w = avail_w
+                pic_h = int(avail_w / ratio)
+            else:
+                pic_h = avail_h
+                pic_w = int(avail_h * ratio)
+            pic_x = left + pad + int((avail_w - pic_w) / 2)
+            pic_y = top + pad + int((avail_h - pic_h) / 2)
+            slide.shapes.add_picture(img_path, pic_x, pic_y, width=pic_w, height=pic_h)
+
+        if caption:
+            c_box = slide.shapes.add_textbox(left + Inches(0.12), top + height - cap_h - Inches(0.04), width - Inches(0.24), cap_h)
+            tf = c_box.text_frame
+            tf.word_wrap = True
+            p = tf.paragraphs[0]
+            p.alignment = PP_ALIGN.CENTER
+            p.text = caption
+            p.font.size = Pt(10)
+            p.font.bold = True
+            p.font.color.rgb = NAVY_MAIN
 
     # =========================================================================
-    # SLIDE 1: COVER
+    # SLIDE 1: TRANG BÌA (CÓ HÌNH MINI PREVIEW WEB & LINH KIỆN)
     # =========================================================================
     s1 = prs.slides.add_slide(blank_layout)
     bg1 = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
@@ -98,343 +143,319 @@ def create_presentation():
     bg1.fill.fore_color.rgb = NAVY_MAIN
     bg1.line.fill.background()
 
-    # Dải màu trang trí
-    dec1 = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(1.2), Inches(0.12), Inches(4.8))
+    dec1 = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.65), Inches(1.0), Inches(0.1), Inches(5.4))
     dec1.fill.solid()
-    dec1.fill.fore_color.rgb = RGBColor(60, 160, 240)
+    dec1.fill.fore_color.rgb = RGBColor(56, 189, 248)
     dec1.line.fill.background()
 
-    tb1 = s1.shapes.add_textbox(Inches(1.2), Inches(1.2), Inches(11.2), Inches(5.0))
+    tb1 = s1.shapes.add_textbox(Inches(0.95), Inches(1.0), Inches(7.2), Inches(5.4))
     tf1 = tb1.text_frame
     tf1.word_wrap = True
 
     p = tf1.paragraphs[0]
-    p.text = "TRƯỜNG ĐẠI HỌC CÔNG NGHỆ – ĐHQGHN  |  KHOA CƠ HỌC KỸ THUẬT VÀ TỰ ĐỘNG HÓA"
+    p.text = "ĐẠI HỌC QUỐC GIA HÀ NỘI\nTRƯỜNG ĐẠI HỌC CÔNG NGHỆ (UET)"
     p.font.size = Pt(12)
     p.font.bold = True
-    p.font.color.rgb = RGBColor(180, 210, 245)
-    p.space_after = Pt(20)
+    p.font.color.rgb = RGBColor(147, 197, 253)
+    p.space_after = Pt(16)
 
     p = tf1.add_paragraph()
     p.text = "BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ"
-    p.font.size = Pt(16)
+    p.font.size = Pt(14)
     p.font.bold = True
-    p.font.color.rgb = RGBColor(255, 200, 80)
+    p.font.color.rgb = RGBColor(251, 191, 36)
     p.space_after = Pt(12)
 
     p = tf1.add_paragraph()
-    p.text = "THIẾT KẾ MÔ HÌNH HỆ THỐNG CỬA BẢO MẬT ĐA PHƯƠNG THỨC XÁC THỰC"
-    p.font.size = Pt(26)
+    p.text = "THIẾT KẾ MÔ HÌNH HỆ THỐNG CỬA BẢO MẬT TÍCH HỢP VÂN TAY AS608, THẺ TỪ RFID RC522, KEYPAD 4x4 & WEB APP"
+    p.font.size = Pt(23)
     p.font.bold = True
     p.font.color.rgb = WHITE
+    p.space_after = Pt(16)
 
     p = tf1.add_paragraph()
-    p.text = "Tích hợp Sinh trắc học Vân tay AS608, Thẻ từ RFID RC522, Keypad 4x4 & Giám sát Web App ESP32"
-    p.font.size = Pt(17)
-    p.font.color.rgb = RGBColor(220, 235, 255)
-    p.space_after = Pt(36)
+    p.text = "•  Nhóm thực hiện: Nhóm 13\n•  Nguyễn Tuấn Sơn — Phần mềm nhúng ESP32, Web App & Báo cáo\n•  Vũ Hữu Hoạt — Thiết kế phần cứng, Mạch in PCB 2 lớp & Mô hình cơ khí\n\n•  Tiến độ hiện tại: Đã mua đủ 100% linh kiện, hoàn tất vẽ PCB & triển khai Web App trên Vercel"
+    p.font.size = Pt(12.5)
+    p.font.color.rgb = RGBColor(219, 234, 254)
 
-    p = tf1.add_paragraph()
-    p.text = "Nhóm thực hiện: Nhóm 13\n•  Nguyễn Tuấn Sơn  —  Phần mềm nhúng ESP32, Giao diện Web App & Báo cáo kỹ thuật\n•  Vũ Hữu Hoạt        —  Thiết kế phần cứng, Vẽ mạch in PCB & Mô hình Cơ khí"
-    p.font.size = Pt(13.5)
-    p.font.color.rgb = RGBColor(200, 220, 245)
+    # Hình preview bên phải trang bìa
+    add_image_frame(s1, IMG_WEB, Inches(8.35), Inches(1.05), Inches(4.45), Inches(2.95), "Giao diện Web App đã hoàn thiện")
+    add_image_frame(s1, IMG_AS608, Inches(8.35), Inches(4.2), Inches(1.4), Inches(2.15), "Vân tay AS608")
+    add_image_frame(s1, IMG_RC522, Inches(9.87), Inches(4.2), Inches(1.4), Inches(2.15), "RFID RC522")
+    add_image_frame(s1, IMG_KEYPAD, Inches(11.4), Inches(4.2), Inches(1.4), Inches(2.15), "Keypad 4x4")
 
     # =========================================================================
-    # SLIDE 2: TỔNG QUAN & MỤC TIÊU
+    # SLIDE 2: TỔNG QUAN & SƠ ĐỒ KHỐI HỆ THỐNG (NHÚNG IMAGE1.PNG)
     # =========================================================================
     s2 = prs.slides.add_slide(blank_layout)
-    add_header(s2, "1. Tổng quan đề tài & Mục tiêu nghiên cứu")
-    add_card(s2, Inches(0.8), Inches(1.6), Inches(5.6), Inches(5.2),
-             "Đặt vấn đề thực tế",
-             [
-                 "Hệ thống khóa cơ học truyền thống tiềm ẩn nguy cơ sao chép chìa khóa và thiếu hoàn toàn khả năng ghi vết nhật ký ra vào.",
-                 "Các hệ thống cửa chỉ dùng 1 phương thức (chỉ thẻ hoặc chỉ mật mã) dễ gặp rủi ro khi rơi thẻ, lộ mật mã hoặc ngón tay bị trầy xước.",
-                 "Giải pháp đề xuất: Xây dựng hệ thống bảo mật đa phương thức tại chỗ (Local Authentication) kết hợp đồng bộ Web App thời gian thực qua mạng Wi-Fi cục bộ."
-             ],
-             subtitle="Lý do lựa chọn đề tài nghiên cứu")
+    add_header(s2, "1. Cấu trúc tổng thể hệ thống & Mục tiêu thiết kế", 2)
 
-    add_card(s2, Inches(6.8), Inches(1.6), Inches(5.7), Inches(5.2),
-             "Mục tiêu kỹ thuật cốt lõi",
+    add_image_frame(s2, IMG_ARCH, Inches(0.65), Inches(1.35), Inches(6.5), Inches(3.25),
+                    "Hình 1.1: Sơ đồ khối tổng thể hệ thống cửa bảo mật tích hợp ESP32 & Web App")
+
+    add_card(s2, Inches(0.65), Inches(4.78), Inches(6.5), Inches(2.1),
+             "Điểm cải tiến trong quá trình triển khai thực tế",
              [
-                 "Tích hợp đồng bộ 3 phương thức xác thực: Vân tay quang học (AS608), Thẻ từ RFID (RC522) và Bàn phím ma trận 4x4.",
-                 "Linh hoạt 2 cấp độ bảo mật: Chế độ 1 lớp (mở nhanh) và chế độ 2 lớp (2FA: Vân tay + PIN, Thẻ + PIN, Vân tay + Thẻ).",
-                 "Thiết kế mạch in PCB 2 lớp: Tối ưu chống nhiễu nguồn và tích hợp mạch điều khiển kích khóa chốt 12V an toàn.",
-                 "Nhúng Web App quản lý trực tiếp lên ESP32: Không cần máy chủ trung gian, cập nhật trạng thái cửa và nhật ký dưới 100ms qua WebSocket."
+                 "Thay thế khối loa thông báo bằng Màn hình tinh thể lỏng LCD 16x2 I2C (0x27) giúp hiển thị trực quan trạng thái khóa, ký tự mật khẩu (*) và hướng dẫn xác thực 2 lớp.",
+                 "Nâng cấp bàn phím lên chuẩn Ma trận 4x4 (16 phím vật lý có nắp che bụi) để tận dụng các phím A, B, C, D cho thao tác khóa nhanh và xác nhận."
+             ], font_pt=11)
+
+    add_card(s2, Inches(7.35), Inches(1.35), Inches(5.33), Inches(5.53),
+             "4 Khối chức năng đồng bộ của đề tài",
+             [
+                 "Khối Thu thập & Xác thực: Kết hợp 3 phương thức độc lập gồm Cảm biến vân tay quang học AS608 (UART2), Đầu đọc thẻ RFID RC522 (SPI 13.56MHz) và Bàn phím ma trận 4x4.",
+                 "Khối Mạch in trung tâm (PCB): Liên kết toàn bộ các module về vi điều khiển ESP32, tích hợp nguồn hạ áp (12V -> 5V/3.3V) và mạch kích khóa chốt kèm Diode chống xung nhiễu.",
+                 "Khối Hiển thị & Chấp hành tại cửa: Màn hình LCD 16x2 hiển thị hướng dẫn tại chỗ và Khóa chốt điện từ 12V đóng/mở cửa tự động.",
+                 "Khối Giao diện Web App (ESP32 Wi-Fi): Theo dõi trạng thái cửa thời gian thực qua WebSocket, mở khóa từ xa, quản lý danh sách thẻ/vân tay và chuyển đổi bảo mật 1 lớp / 2 lớp (2FA)."
              ],
-             subtitle="Chỉ tiêu kỹ thuật cần đạt được",
+             subtitle="Sự kết hợp giữa phần cứng cơ điện tử và phần mềm nhúng",
              highlight=True)
 
     # =========================================================================
-    # SLIDE 3: CẤU TRÚC HỆ THỐNG
+    # SLIDE 3: DANH MỤC LINH KIỆN ĐÃ MUA & KHẢO SÁT DATASHEET (NHÚNG 3 ẢNH LINH KIỆN)
     # =========================================================================
     s3 = prs.slides.add_slide(blank_layout)
-    add_header(s3, "2. Cấu trúc tổng thể hệ thống (System Architecture)")
+    add_header(s3, "2. Danh mục linh kiện thực tế đã chuẩn bị & Thông số Datasheet", 3)
 
-    w3 = Inches(3.65)
-    h3 = Inches(5.2)
-    add_card(s3, Inches(0.8), Inches(1.6), w3, h3,
-             "Khối Thu thập & Xác thực",
+    # 3 cột có ảnh linh kiện phía trên và thông số kỹ thuật phía dưới
+    col_w = Inches(3.85)
+    # Cột 1: AS608
+    add_image_frame(s3, IMG_AS608, Inches(0.65), Inches(1.35), col_w, Inches(2.55),
+                    "Cảm biến vân tay quang học AS608 (Đã mua)")
+    add_card(s3, Inches(0.65), Inches(4.02), col_w, Inches(2.85),
+             "Thông số Datasheet AS608",
              [
-                 "Cảm biến vân tay quang học AS608: Giao tiếp UART TTL (57600 bps), lưu 127 vân tay.",
-                 "Đầu đọc thẻ RFID RC522: Tần số 13.56 MHz, giao tiếp bus SPI, đọc thẻ S50 và móc khóa NFC.",
-                 "Bàn phím ma trận cơ 4x4: Quét ma trận 4 hàng x 4 cột (8 GPIO), hỗ trợ phím chức năng A, B, C, D, *, #."
-             ],
-             subtitle="Thiết bị ngoại vi tại cửa")
+                 "Điện áp cấp: 3.3V – 5.0V DC (Dòng đỉnh < 120mA).",
+                 "Giao tiếp: UART TTL (57600 bps) qua Header 6 chân.",
+                 "Lưu trữ: Tối đa 127 mẫu vân tay trong Flash nội.",
+                 "Thời gian xử lý ảnh & tìm kiếm: < 1.0 giây."
+             ], font_pt=11)
 
-    add_card(s3, Inches(4.8), Inches(1.6), w3, h3,
-             "Khối Xử lý & Phản hồi",
+    # Cột 2: RFID RC522
+    add_image_frame(s3, IMG_RC522, Inches(4.74), Inches(1.35), col_w, Inches(2.55),
+                    "Module RFID RC522 13.56MHz + Thẻ S50 (Đã mua)")
+    add_card(s3, Inches(4.74), Inches(4.02), col_w, Inches(2.85),
+             "Thông số Datasheet RC522",
              [
-                 "Vi điều khiển trung tâm ESP32: Dual-core 240 MHz, xử lý State Machine không chặn (Non-blocking).",
-                 "Màn hình LCD 16x2 (I2C 0x27): Hiển thị phản hồi tức thì cho người dùng tại cửa.",
-                 "Cơ cấu chấp hành Khóa chốt 12V: Kích mở qua Relay/MOSFET kèm Diode 1N4007 dập xung ngược."
-             ],
-             subtitle="Xử lý trung tâm & Chấp hành",
-             highlight=True)
+                 "Nguồn cấp bắt buộc: 3.3V DC (Dòng 13 – 26mA).",
+                 "Tần số hoạt động: 13.56 MHz (Đọc thẻ S50 & NFC).",
+                 "Giao tiếp: Chuẩn SPI tốc độ cao (10 Mbps).",
+                 "Khoảng cách nhận diện thẻ: 0 – 30 mm."
+             ], font_pt=11, highlight=True)
 
-    add_card(s3, Inches(8.8), Inches(1.6), w3, h3,
-             "Khối Giám sát & Quản trị",
+    # Cột 3: Keypad 4x4 & Khóa 12V
+    add_image_frame(s3, IMG_KEYPAD, Inches(8.83), Inches(1.35), col_w, Inches(2.55),
+                    "Bàn phím cứng ma trận có nắp đậy (Đã mua)")
+    add_card(s3, Inches(8.83), Inches(4.02), col_w, Inches(2.85),
+             "Keypad 4x4, LCD I2C & Khóa 12V",
              [
-                 "Web Server & WebSocket Server: Nhúng trực tiếp trong Flash LittleFS của ESP32.",
-                 "Tên miền nội bộ mDNS (smartdoor.local): Truy cập nhanh không cần nhớ địa chỉ IP.",
-                 "Đám mây demo Vercel: Triển khai giao diện trực tuyến phục vụ kiểm thử và báo cáo từ xa."
-             ],
-             subtitle="Mạng & Ứng dụng điều khiển")
+                 "Bàn phím ma trận 4x4: Phím vật lý độ nảy cao, có nắp che chống bụi, quét 8 chân Hàng – Cột về PCB.",
+                 "Màn hình LCD 16x2 I2C: Điện áp 5V, địa chỉ 0x27.",
+                 "Khóa chốt điện từ 12V: Dòng kích 0.8A – 1.2A, đóng mở qua Relay/MOSFET có Diode dập xung."
+             ], font_pt=11)
 
     # =========================================================================
-    # SLIDE 4: KHẢO SÁT LINH KIỆN & DATASHEET
+    # SLIDE 4: NGHIÊN CỨU GIAO THỨC KẾT NỐI & QUY HOẠCH CHÂN ESP32
     # =========================================================================
     s4 = prs.slides.add_slide(blank_layout)
-    add_header(s4, "3. Khảo sát linh kiện & Phân tích Datasheet chi tiết")
+    add_header(s4, "3. Nghiên cứu giao thức kết nối & Quy hoạch sơ đồ chân ESP32", 4)
 
-    w4 = Inches(5.6)
-    h4 = Inches(2.45)
-    add_card(s4, Inches(0.8), Inches(1.6), w4, h4,
-             "Cảm biến vân tay quang học AS608",
+    add_card(s4, Inches(0.65), Inches(1.35), Inches(6.2), Inches(5.5),
+             "Quy hoạch Sơ đồ chân (Pinout ESP32) đồng bộ PCB",
              [
-                 "Điện áp cấp: 3.3V – 5.0V DC; Dòng đỉnh: < 120 mA.",
-                 "Giao tiếp: UART TTL (baudrate 57600 bps mặc định).",
-                 "Độ phân giải: 500 DPI, thời gian đối sánh mẫu: < 1.0 giây."
-             ])
+                 "1. Cảm biến vân tay AS608 (Chuẩn UART2 - 57600 bps):",
+                 "    • Chân TX (AS608) -> GPIO 16 (RX2)  |  Chân RX (AS608) -> GPIO 17 (TX2)",
+                 "2. Module đọc thẻ RFID RC522 (Chuẩn SPI - Nguồn 3.3V):",
+                 "    • SDA(SS): GPIO 5 | SCK: GPIO 18 | MOSI: GPIO 23 | MISO: GPIO 19 | RST: GPIO 4",
+                 "3. Màn hình hiển thị LCD 16x2 (Chuẩn I2C - Địa chỉ 0x27):",
+                 "    • SDA -> GPIO 21  |  SCL -> GPIO 22",
+                 "4. Cơ cấu chấp hành Khóa chốt điện từ 12V:",
+                 "    • Tín hiệu kích Relay/MOSFET -> GPIO 2 (Mức HIGH kích mở khóa)",
+                 "5. Bàn phím ma trận Keypad 4x4 (8 chân GPIO):",
+                 "    • 4 Hàng (R1 -> R4): GPIO 13, 12, 14, 27  |  4 Cột (C1 -> C4): GPIO 26, 25, 33, 32"
+             ],
+             subtitle="Đã kiểm chứng tránh toàn bộ chân cấm (Strapping Pins & Input-Only Pins)",
+             font_pt=11)
 
-    add_card(s4, Inches(6.8), Inches(1.6), Inches(5.7), h4,
-             "Module đọc thẻ từ RFID-RC522",
+    add_card(s4, Inches(7.05), Inches(1.35), Inches(5.63), Inches(5.5),
+             "Giải quyết bài toán kỹ thuật khi nghiên cứu Datasheet",
              [
-                 "Điện áp hoạt động: 3.3V DC (Tuyệt đối không cấp 5V gây hỏng chip).",
-                 "Tần số sóng mang: 13.56 MHz; Chuẩn giao tiếp: SPI tốc độ cao.",
-                 "Dòng tiêu thụ: 13 – 26 mA; Khoảng cách đọc: 0 – 30 mm."
-             ])
-
-    add_card(s4, Inches(0.8), Inches(4.35), w4, h4,
-             "Bàn phím ma trận 4x4 & LCD I2C",
-             [
-                 "Keypad 4x4: 16 phím cơ độ nảy cao, chống bụi bẩn, 8 chân hàng-cột.",
-                 "Màn hình LCD 16x2 + Ba lô PCF8574: Tiết kiệm từ 16 chân còn 2 chân I2C.",
-                 "Điện áp cấp LCD: 5V DC đảm bảo độ tương phản rõ nét."
-             ])
-
-    add_card(s4, Inches(6.8), Inches(4.35), Inches(5.7), h4,
-             "Vi điều khiển ESP32 & Khóa chốt 12V",
-             [
-                 "ESP32-WROOM-32: Bộ nhớ Flash 4MB, tích hợp Wi-Fi 2.4GHz & Bluetooth.",
-                 "Khóa chốt điện từ 12V: Dòng kích cuộn dây 0.8A – 1.0A (Fail-Secure).",
-                 "Bảo vệ quá áp: Sử dụng Diode dập xung ngược 1N4007 song song cuộn hút."
-             ])
+                 "Tránh xung đột chân Input-Only (GPIO 34, 35, 36, 39): Các chân này trên ESP32 không có điện trở kéo lên nội (INPUT_PULLUP). Do đó nhóm quy hoạch Keypad 4x4 vào cụm chân 12..33 để quét ma trận ổn định không cần trở ngoài.",
+                 "Bảo vệ mức điện áp 3.3V cho RC522: Datasheet MFRC522 quy định chân VCC tối đa 3.6V. Mạch PCB tách đường nguồn 3.3V riêng cho RC522, tách biệt hoàn toàn với đường 5V của LCD và 12V của khóa chốt.",
+                 "Triệt tiêu xung nhiễu cảm ứng từ Khóa chốt 12V: Khi ngắt dòng cuộn hút khóa 12V sẽ sinh ra sức điện động ngược làm treo ESP32. Nhóm bố trí Diode 1N4007 mắc ngược cực song song khóa 12V kết hợp tụ lọc 470uF."
+             ],
+             subtitle="Đảm bảo tính ổn định công nghiệp khi vận hành thực tế",
+             highlight=True, font_pt=11.5)
 
     # =========================================================================
-    # SLIDE 5: SƠ ĐỒ NGUYÊN LÝ & QUY HOẠCH CHÂN PINOUT
+    # SLIDE 5: KẾT QUẢ THIẾT KẾ MẠCH IN PCB 2 LỚP (NHÚNG ẢNH PCB)
     # =========================================================================
     s5 = prs.slides.add_slide(blank_layout)
-    add_header(s5, "4. Quy hoạch sơ đồ chân ESP32 & Giải pháp chống nhiễu")
+    add_header(s5, "4. Kết quả thiết kế Sơ đồ nguyên lý & Mạch in PCB (Vũ Hữu Hoạt)", 5)
 
-    add_card(s5, Inches(0.8), Inches(1.6), Inches(6.5), Inches(5.2),
-             "Bảng phân bổ chân GPIO trên ESP32",
-             [
-                 "Cảm biến AS608: RX2 -> GPIO 16, TX2 -> GPIO 17 (HardwareSerial2 độc lập).",
-                 "RFID RC522 (SPI): SS -> GPIO 5, SCK -> GPIO 18, MOSI -> GPIO 23, MISO -> GPIO 19, RST -> GPIO 4.",
-                 "Màn hình LCD 16x2: SDA -> GPIO 21, SCL -> GPIO 22 (Chuẩn I2C mặc định).",
-                 "Khóa chốt điện 12V: Kích mở qua GPIO 2 (Logic HIGH kích mở).",
-                 "Bàn phím ma trận 4x4 (8 chân GPIO):",
-                 "    • Hàng R1 – R4: GPIO 13, 12, 14, 27 (cấu hình INPUT_PULLUP)",
-                 "    • Cột C1 – C4: GPIO 26, 25, 33, 32 (quét mức LOW tuần tự)",
-                 "Nguyên tắc: Không sử dụng các chân GPIO 34-39 (chỉ đọc) và các chân Strapping (GPIO 0, 15) để tránh lỗi khởi động nạp firmware."
-             ],
-             subtitle="Tránh xung đột chân Bootloader & Strapping Pins")
+    add_image_frame(s5, IMG_PCB, Inches(0.65), Inches(1.35), Inches(6.65), Inches(5.5),
+                    "Hình 4.1: Sơ đồ bố trí các khối Header kết nối và đường mạch trên PCB trung tâm")
 
-    add_card(s5, Inches(7.6), Inches(1.6), Inches(4.9), Inches(5.2),
-             "Giải pháp thiết kế chống xung nhiễu",
+    add_card(s5, Inches(7.5), Inches(1.35), Inches(5.18), Inches(5.5),
+             "Chi tiết công việc thiết kế PCB đã hoàn thành",
              [
-                 "Tách tầng nguồn công suất & vi điều khiển: Nguồn tổng 12V cấp khóa chốt; hạ áp 5V cấp ESP32/LCD; hạ áp 3.3V cấp riêng cho RC522.",
-                 "Xử lý sụt áp cuộn cảm: Bố trí tụ hóa 470uF và tụ gốm 100nF lọc nguồn tức thời khi khóa 12V đóng ngắt.",
-                 "Dập xung điện áp ngược cảm ứng: Mắc Diode 1N4007 song song ngược cực với khóa 12V để triệt tiêu điện áp e = -L(di/dt).",
-                 "Cách ly quang: Sử dụng Optocoupler kích Relay/MOSFET giúp vi điều khiển ESP32 không bị reset khi tải cảm hoạt động."
+                 "Khảo sát & Đo đạc chân cắm thực tế: Đã đo chuẩn khoảng cách pitch 2.54mm của các cụm Header 6 chân (AS608), 8 chân (RC522), 8 chân (Keypad 4x4), 4 chân (LCD I2C) và Domino nguồn 12V.",
+                 "Hoàn thiện Sơ đồ nguyên lý (Schematic): Liên kết toàn bộ các khối về ESP32, tích hợp khối nguồn hạ áp Buck 12V -> 5V/3.3V và tầng kích khóa chốt.",
+                 "Thiết kế Layout PCB 2 lớp:",
+                 "    • Đường mạch công suất 12V cấp cho khóa điện được đi dây độ rộng lớn (> 40 mil) chịu dòng 1.5A.",
+                 "    • Phủ đồng mặt Mass (GND Copper Pour) cả 2 lớp giúp chống nhiễu sóng Wi-Fi và RFID 13.56MHz.",
+                 "    • Đã kiểm tra DRC (Design Rule Check) không còn lỗi và sẵn sàng gia công hàn mạch ở Giai đoạn 3."
              ],
-             subtitle="Đảm bảo hệ thống hoạt động ổn định 24/7",
-             highlight=True)
+             subtitle="Phụ trách chính: Vũ Hữu Hoạt",
+             highlight=True, font_pt=11)
 
     # =========================================================================
-    # SLIDE 6: TIẾN ĐỘ THIẾT KẾ MẠCH IN PCB
+    # SLIDE 6: KIẾN TRÚC FIRMWARE ESP32 & BẢO MẬT ĐA CẤP ĐỘ 1 LỚP / 2FA
     # =========================================================================
     s6 = prs.slides.add_slide(blank_layout)
-    add_header(s6, "5. Tiến độ thiết kế mạch in PCB (Phụ trách: Vũ Hữu Hoạt)")
+    add_header(s6, "5. Kiến trúc Firmware ESP32 & Cơ chế Bảo mật 1 Lớp / 2 Lớp (2FA)", 6)
 
-    w6 = Inches(5.6)
-    h6 = Inches(5.2)
-    add_card(s6, Inches(0.8), Inches(1.6), w6, h6,
-             "Kết quả thiết kế Schematic & Layout PCB",
+    add_card(s6, Inches(0.65), Inches(1.35), Inches(5.8), Inches(5.5),
+             "Kiến trúc Phần mềm nhúng ESP32 (PlatformIO)",
              [
-                 "Đo đạc chính xác kích thước chân cắm (Footprint): Đo khoảng cách header 6 chân của AS608, 8 chân RC522, 8 chân Keypad 4x4 và cọc đấu dây Domino 12V.",
-                 "Hoàn thiện bản vẽ nguyên lý (Schematic): Kết nối đầy đủ các khối chức năng, tích hợp IC hạ áp nguồn, tụ lọc và transistor công suất.",
-                 "Vẽ Layout mạch in 2 lớp (Double-layer PCB):",
-                 "    • Đường mạch công suất cấp khóa 12V được thiết kế bản rộng (> 40 mil), chịu dòng tức thời đến 2A an toàn.",
-                 "    • Phủ mass toàn bộ 2 mặt (GND Copper Pouring) để triệt tiêu nhiễu cao tần phát sinh từ module Wi-Fi và sóng RFID 13.56 MHz.",
-                 "    • Các đường tín hiệu SPI và UART đi song song khoảng cách hợp lý, giảm tối đa hiện tượng xuyên âm (Crosstalk)."
+                 "Vòng lặp Non-blocking (Không chặn):",
+                 "    • Không sử dụng delay() dài gây đơ phím; dùng millis() quét Keypad 4x4 liên tục (< 5ms) và quét AS608/RC522 mỗi 80ms.",
+                 "Hệ thống tệp Flash LittleFS bền vững:",
+                 "    • Lưu trữ toàn bộ file giao diện Web (index.html, style.css, app.js) và cơ sở dữ liệu config.json ngay trong bộ nhớ Flash 4MB của ESP32.",
+                 "    • Mất điện không bị mất mật khẩu PIN, danh sách thẻ RFID hay ID vân tay.",
+                 "Giao thức WebSocket (/ws) & mDNS:",
+                 "    • Đồng bộ trạng thái cửa và màn hình LCD 16x2 lên trình duyệt dưới 100ms.",
+                 "    • Tích hợp tên miền nội bộ http://smartdoor.local."
              ],
-             subtitle="Tối ưu kích thước & Khả năng tản nhiệt")
+             subtitle="Phụ trách chính: Nguyễn Tuấn Sơn", font_pt=11.5)
 
-    add_card(s6, Inches(6.8), Inches(1.6), Inches(5.7), h6,
-             "Trạng thái phần cứng & Kế hoạch chế tạo",
+    add_card(s6, Inches(6.68), Inches(1.35), Inches(6.0), Inches(5.5),
+             "Cơ chế Bảo mật Đa cấp độ (1 Lớp & 2FA) mới phát triển",
              [
-                 "Trạng thái linh kiện: 100% linh kiện đã được mua đủ và kiểm tra thông mạch (AS608, RC522, Keypad 4x4, LCD I2C, ESP32, Khóa 12V).",
-                 "Trạng thái PCB: Đã hoàn tất kiểm tra quy tắc thiết kế (DRC) và xuất trọn bộ file Gerber gia công.",
-                 "Kế hoạch triển khai sau giữa kỳ:",
-                 "    • Nhận mạch in PCB gia công từ nhà máy.",
-                 "    • Hàn gắn linh kiện, đo kiểm tra điện áp các điểm test point (12V, 5V, 3.3V).",
-                 "    • Gia công cơ khí khung mô hình cửa gỗ/mica, gá lắp khóa chốt và cảm biến."
+                 "Chế độ 1 Lớp (Single-Factor): Quét Vân tay đúng HOẶC Thẻ RFID đúng HOẶC nhập đúng PIN Keypad 4x4 là mở cửa ngay.",
+                 "Chế độ 2 Lớp (Two-Factor Authentication - 2FA): Yêu cầu xác thực thành công 2 bước liên tiếp trong thời gian quy định:",
+                 "    • Chế độ 2: Vân tay AS608  +  Mã PIN Keypad 4x4",
+                 "    • Chế độ 3: Thẻ từ RFID RC522  +  Mã PIN Keypad 4x4",
+                 "    • Chế độ 4: Vân tay AS608  +  Thẻ từ RFID RC522",
+                 "Cơ chế chống treo phiên (Session Timeout 15 giây):",
+                 "    • Khi qua Lớp 1, màn hình LCD hiển thị 'XAC THUC LOP 1 OK - NHAP PIN + #'. Nếu quá 15 giây không hoàn thành Lớp 2 hoặc nhập sai, hệ thống tự hủy phiên và khóa an toàn."
              ],
-             subtitle="Sẵn sàng cho giai đoạn lắp ráp hoàn thiện",
-             highlight=True)
+             subtitle="Nâng cao tính bảo mật cho phòng thí nghiệm & khu vực quan trọng",
+             highlight=True, font_pt=11.5)
 
     # =========================================================================
-    # SLIDE 7: PHẦN MỀM NHÚNG ESP32
+    # SLIDE 7: KẾT QUẢ XÂY DỰNG GIAO DIỆN WEB APP (NHÚNG ẢNH WEB DASHBOARD)
     # =========================================================================
     s7 = prs.slides.add_slide(blank_layout)
-    add_header(s7, "6. Xây dựng phần mềm nhúng ESP32 (Phụ trách: Nguyễn Tuấn Sơn)")
+    add_header(s7, "6. Kết quả xây dựng Giao diện Web App Quản lý (Nguyễn Tuấn Sơn)", 7)
 
-    w7 = Inches(5.6)
-    h7 = Inches(5.2)
-    add_card(s7, Inches(0.8), Inches(1.6), w7, h7,
-             "Kiến trúc lập trình Non-blocking",
-             [
-                 "Loại bỏ hoàn toàn hàm chặn delay(): Sử dụng kỹ thuật định thời millis() và máy trạng thái hữu hạn (Finite State Machine).",
-                 "Phân phối chu kỳ quét cảm biến hợp lý:",
-                 "    • Quét ma trận Keypad 4x4: Thực thi liên tục theo từng chu kỳ vòng lặp, độ trễ nhận phím < 5ms.",
-                 "    • Quét RFID và Vân tay AS608: Thực thi theo chu kỳ định thời 80ms, tránh nghẽn CPU.",
-                 "    • Đếm ngược đóng cửa tự động: Xử lý chạy nền song song với việc giữ kết nối WebSocket."
-             ],
-             subtitle="Đảm bảo hệ thống phản hồi mượt mà không treo đơ")
+    add_image_frame(s7, IMG_WEB, Inches(0.65), Inches(1.35), Inches(7.35), Inches(5.5),
+                    "Hình 6.1: Giao diện Web App thực tế (Thiết kế tối giản Shadcn UI, rõ ràng, dễ thao tác)")
 
-    add_card(s7, Inches(6.8), Inches(1.6), Inches(5.7), h7,
-             "Quản lý bộ nhớ Flash LittleFS & Kết nối",
+    add_card(s7, Inches(8.2), Inches(1.35), Inches(4.48), Inches(5.5),
+             "Các tính năng đã hoàn thiện trên Web",
              [
-                 "Phân vùng Flash LittleFS:",
-                 "    • Lưu trữ toàn bộ mã nguồn Web App tĩnh (HTML, CSS, JS) nén trực tiếp vào Flash.",
-                 "    • Quản lý cơ sở dữ liệu dạng JSON (config.json) lưu mật khẩu PIN, danh sách UID thẻ và ID vân tay.",
-                 "Bảo toàn dữ liệu khi mất điện: Mọi thay đổi cấu hình từ Web App hoặc Keypad được ghi trực tiếp vào LittleFS, khởi động lại không bị mất.",
-                 "Tên miền nội bộ mDNS (smartdoor.local): Người dùng chỉ cần gõ http://smartdoor.local là mở Web App ngay trong mạng Wi-Fi."
+                 "1. Bảng điều khiển (Dashboard):",
+                 "    • Hiển thị trạng thái khóa 12V trực quan & đếm ngược thời gian tự đóng.",
+                 "    • Nút nhấn Mở khóa từ xa & Khóa khẩn cấp qua Wi-Fi.",
+                 "    • Màn hình LCD 16x2 Live Mirror phản chiếu chính xác từng dòng chữ tại cửa.",
+                 "2. Nhật ký lịch sử ra vào:",
+                 "    • Ghi nhận Thời gian thực, Phương thức, Tên người dùng, Trạng thái Hợp lệ/Từ chối.",
+                 "    • Hỗ trợ lọc theo phương thức và Xuất file .CSV phục vụ báo cáo.",
+                 "3. Quản lý Vân tay & Thẻ RFID:",
+                 "    • Đăng ký mẫu vân tay mới và Quét thêm thẻ RFID trực tiếp từ giao diện Web."
              ],
-             subtitle="Lưu trữ bền vững & Truy cập tiện lợi",
-             highlight=True)
+             subtitle="Hoạt động trên cả Điện thoại & Máy tính",
+             highlight=True, font_pt=10.8)
 
     # =========================================================================
-    # SLIDE 8: CƠ CHẾ BẢO MẬT ĐA CẤP ĐỘ (1 LỚP & 2 LỚP)
+    # SLIDE 8: TRIỂN KHAI TÊN MIỀN VERCEL & BỘ GIẢ LẬP PHẦN CỨNG (NHÚNG ẢNH VERCEL)
     # =========================================================================
     s8 = prs.slides.add_slide(blank_layout)
-    add_header(s8, "7. Cơ chế bảo mật đa cấp độ (Xác thực 1 lớp & 2FA)")
+    add_header(s8, "7. Triển khai Cloud Vercel & Bộ giả lập phần cứng kiểm thử", 8)
 
-    w8 = Inches(5.6)
-    h8 = Inches(5.2)
-    add_card(s8, Inches(0.8), Inches(1.6), w8, h8,
-             "Chế độ Xác thực 1 lớp (Single Auth)",
-             [
-                 "Nguyên lý vận hành: Người dùng chỉ cần xác thực thành công 1 trong 3 phương thức là cửa mở ngay lập tức.",
-                 "Phương thức hỗ trợ:",
-                 "    • Quét Vân tay AS608 hợp lệ (khớp mẫu trong bộ nhớ ID 1–127).",
-                 "    • Quẹt Thẻ từ RFID RC522 hợp lệ (khớp mã UID trong cơ sở dữ liệu).",
-                 "    • Nhập đúng mã PIN trên Bàn phím ma trận 4x4 rồi nhấn phím # hoặc D.",
-                 "Ứng dụng: Phù hợp cho môi trường gia đình, văn phòng thông thường cần thao tác ra vào nhanh chóng."
-             ],
-             subtitle="Tối ưu sự tiện lợi & Tốc độ mở cửa")
+    add_image_frame(s8, IMG_VERCEL, Inches(0.65), Inches(1.35), Inches(7.35), Inches(5.5),
+                    "Hình 7.1: Hệ thống mã nguồn trên GitHub đã được triển khai thành công lên tên miền Vercel")
 
-    add_card(s8, Inches(6.8), Inches(1.6), Inches(5.7), h8,
-             "Chế độ Xác thực 2 lớp (Two-Factor Authentication)",
+    add_card(s8, Inches(8.2), Inches(1.35), Inches(4.48), Inches(5.5),
+             "Kiểm thử độc lập & Tên miền truy cập",
              [
-                 "Tùy chọn đa dạng cấu hình trực tiếp từ Web App:",
-                 "    1. Vân tay AS608 + Mã PIN Keypad 4x4",
-                 "    2. Thẻ từ RFID RC522 + Mã PIN Keypad 4x4",
-                 "    3. Vân tay AS608 + Thẻ từ RFID RC522",
-                 "Quy trình xử lý phiên 2FA an toàn:",
-                 "    • Bước 1: Người dùng xác thực lớp 1 đúng -> Khóa chưa mở, màn hình LCD và Web hiển thị yêu cầu thực hiện tiếp lớp 2.",
-                 "    • Bước 2: Kích hoạt bộ đếm thời gian Timeout 15 giây. Nếu nhập đúng lớp 2 -> Mở khóa. Nếu quá 15s hoặc sai -> Hủy phiên ngay lập tức."
+                 "Kho mã nguồn GitHub của nhóm:",
+                 "    • github.com/tuansonuet197/smartdoor-nhom13",
+                 "Tên miền Web App trực tuyến (Vercel):",
+                 "    • smartdoor-nhom13-data.vercel.app",
+                 "Tên miền cục bộ khi chạy trên ESP32:",
+                 "    • http://smartdoor.local (mDNS)",
+                 "Bộ giả lập phần cứng (Draggable Simulator):",
+                 "    • Tích hợp sẵn bảng giả lập kéo-thả tự do trên góc màn hình Web.",
+                 "    • Cho phép bấm thử Bàn phím 4x4 ảo, giả lập quét Vân tay đúng/sai, quẹt Thẻ RFID đúng/lạ để kiểm chứng toàn bộ luồng logic 1 lớp & 2FA trước khi hàn mạch."
              ],
-             subtitle="Bảo vệ khu vực trọng yếu & Phòng thí nghiệm",
-             highlight=True)
+             subtitle="Sẵn sàng chạy Demo trực tiếp ngay trong buổi báo cáo",
+             highlight=True, font_pt=11)
 
     # =========================================================================
-    # SLIDE 9: GIAO DIỆN WEB APP QUẢN LÝ
+    # SLIDE 9: BẢNG TIẾN ĐỘ THỰC HIỆN & PHÂN CHIA CÔNG VIỆC
     # =========================================================================
     s9 = prs.slides.add_slide(blank_layout)
-    add_header(s9, "8. Giao diện Web App quản lý & Triển khai đám mây")
+    add_header(s9, "8. Đánh giá tiến độ thực hiện so với kế hoạch đề ra", 9)
 
-    w9 = Inches(5.6)
-    h9 = Inches(5.2)
-    add_card(s9, Inches(0.8), Inches(1.6), w9, h9,
-             "Thiết kế giao diện hiện đại (Shadcn/Vercel)",
+    add_card(s9, Inches(0.65), Inches(1.35), Inches(5.9), Inches(2.6),
+             "Giai đoạn 1 (Tuần 1 – 2): Khảo sát & Mua linh kiện  [ĐÃ HOÀN THÀNH 100%]",
              [
-                 "Phong cách thiết kế tối giản: Tông màu sáng đơn sắc (Monochrome Light Theme), sử dụng hệ font chuẩn Inter và icon vector nét mảnh.",
-                 "4 Phân hệ chức năng hoàn chỉnh:",
-                 "    • Tổng quan: Trạng thái khóa cửa thời gian thực, nút mở từ xa, màn hình LCD 16x2 phản chiếu (Live Mirror).",
-                 "    • Nhật ký ra vào: Ghi nhận thời gian, phương thức, kết quả hợp lệ/từ chối, bộ lọc và xuất file báo cáo CSV.",
-                 "    • Quản lý vân tay & RFID: Đăng ký mẫu vân tay mới, đọc thẻ nhanh từ RC522, xóa từng người dùng.",
-                 "    • Cấu hình hệ thống: Chuyển đổi 1 lớp / 2 lớp, đổi mã PIN Keypad, chỉnh thời gian mở."
-             ],
-             subtitle="Trực quan, dễ dùng trên cả Smartphone & Laptop")
+                 "Chốt sơ đồ tổng thể hệ thống cửa bảo mật 3 phương thức xác thực + Web App.",
+                 "Mua đầy đủ 100% linh kiện: Cảm biến vân tay AS608, RFID RC522 + thẻ S50/NFC, Keypad 4x4 có nắp đậy, màn hình LCD I2C, ESP32, Khóa chốt 12V và linh kiện nguồn."
+             ], highlight=True, font_pt=11)
 
-    add_card(s9, Inches(6.8), Inches(1.6), Inches(5.7), h9,
-             "Triển khai trực tuyến & Bộ giả lập phần cứng",
+    add_card(s9, Inches(6.78), Inches(1.35), Inches(5.9), Inches(2.6),
+             "Giai đoạn 2 (Tuần 3 – 4): Thiết kế PCB & Web App  [ĐÃ HOÀN THÀNH 100%]",
              [
-                 "Triển khai thành công trên nền tảng Vercel:",
-                 "    • Địa chỉ truy cập trực tuyến: https://smartdoor-nhom13-data.vercel.app",
-                 "    • Đồng bộ liên tục qua kho mã nguồn GitHub: tuansonuet197/smartdoor-nhom13.",
-                 "Bộ giả lập phần cứng tích hợp sẵn (Draggable Simulator):",
-                 "    • Hỗ trợ kéo thả tự do trên màn hình để không che bảng điều khiển.",
-                 "    • Cho phép giả lập quét vân tay đúng/sai, quẹt thẻ RFID và bàn phím 4x4 ảo để kiểm thử toàn diện quy trình 2FA ngay cả khi chưa cắm mạch."
-             ],
-             subtitle="Sẵn sàng trình chiếu demo trực tiếp tại buổi báo cáo",
-             highlight=True)
+                 "Vũ Hữu Hoạt: Đã nghiên cứu datasheet, đo chân linh kiện, hoàn thành vẽ sơ đồ nguyên lý (Schematic) và Layout mạch in PCB 2 lớp.",
+                 "Nguyễn Tuấn Sơn: Đã lập trình xong bộ mã nguồn ESP32 (PlatformIO), hoàn thiện giao diện Web App tích hợp bảo mật 2 lớp (2FA) và đưa lên tên miền Vercel."
+             ], highlight=True, font_pt=11)
+
+    add_card(s9, Inches(0.65), Inches(4.2), Inches(5.9), Inches(2.65),
+             "Giai đoạn 3 (Tuần 5 – 6): Gia công mạch & Tích hợp  [DỰ KIẾN TIẾP THEO]",
+             [
+                 "Vũ Hữu Hoạt: Gia công ăn mòn/đặt in mạch PCB, hàn linh kiện, đo kiểm tra khối nguồn hạ áp 12V -> 5V/3.3V và dựng khung mô hình cửa cơ khí.",
+                 "Nguyễn Tuấn Sơn: Nạp code và hệ thống file LittleFS lên mạch ESP32 thực tế, hiệu chỉnh độ nhạy cảm biến AS608 và RC522 trên bo mạch."
+             ], font_pt=11)
+
+    add_card(s9, Inches(6.78), Inches(4.2), Inches(5.9), Inches(2.65),
+             "Giai đoạn 4 (Tuần 7 – 8): Lắp đặt hoàn thiện & Báo cáo  [DỰ KIẾN]",
+             [
+                 "Lắp đặt toàn bộ bo mạch PCB, khóa chốt 12V, LCD, Keypad 4x4, AS608, RC522 lên khung mô hình cửa hoàn chỉnh.",
+                 "Kiểm thử thực nghiệm các kịch bản bảo mật 1 lớp / 2 lớp, trích xuất file CSV lịch sử ra vào và hoàn thiện cuốn Báo cáo đồ án Cơ Điện Tử."
+             ], font_pt=11)
 
     # =========================================================================
-    # SLIDE 10: TỔNG KẾT TIẾN ĐỘ & KẾ HOẠCH
+    # SLIDE 10: KẾT LUẬN GIỮA KỲ & DEMO TRỰC TIẾP
     # =========================================================================
     s10 = prs.slides.add_slide(blank_layout)
-    add_header(s10, "9. Tổng kết tiến độ giữa kỳ & Kế hoạch giai đoạn 2")
+    add_header(s10, "9. Tổng kết báo cáo giữa kỳ & Trình chiếu Demo Web App", 10)
 
-    w10 = Inches(5.6)
-    h10 = Inches(5.2)
-    add_card(s10, Inches(0.8), Inches(1.6), w10, h10,
-             "Đánh giá kết quả giai đoạn giữa kỳ (Đạt 100%)",
+    add_card(s10, Inches(0.65), Inches(1.35), Inches(6.2), Inches(5.5),
+             "Tóm tắt các kết quả đạt được tính đến giữa kỳ",
              [
-                 "Khảo sát & Chuẩn bị linh kiện: Đã mua đủ 100% linh kiện chính và phụ trợ (ESP32, AS608, RC522, Keypad 4x4, LCD I2C, Khóa 12V).",
-                 "Nghiên cứu kỹ thuật: Nắm vững tập lệnh UART của AS608, giao thức SPI của RC522, cơ chế dập xung khóa điện 12V.",
-                 "Thiết kế mạch in PCB: Hoàn thành 100% Schematic và Layout PCB 2 lớp, đã xuất file Gerber gửi xưởng gia công.",
-                 "Phần mềm & Web App: Hoàn thành 100% firmware nhúng Non-blocking, cơ chế bảo mật 2FA, giao diện Web App và deploy thành công lên Vercel."
+                 "1. Về linh kiện vật tư: Đã chuẩn bị đầy đủ 100% các module cảm biến và cơ cấu chấp hành theo đúng danh mục đề tài.",
+                 "2. Về nghiên cứu lý thuyết & mạch điện: Đã làm chủ datasheet, giao thức UART2 / SPI / I2C / Matrix Scanning và hoàn thành bản vẽ mạch in PCB trung tâm.",
+                 "3. Về phần mềm & Web App: Đã hoàn thiện sớm hơn tiến độ (vừa có Firmware C++ cho ESP32, vừa có Web App tối giản hỗ trợ bảo mật 1 lớp & 2FA).",
+                 "4. Sẵn sàng chuyển sang Giai đoạn 3 (Gia công hàn mạch PCB và lắp dựng cơ khí khung cửa)."
              ],
-             subtitle="Hoàn thành đúng tiến độ Tuần 1 – Tuần 4")
+             subtitle="Đảm bảo 100% tiến độ theo kế hoạch học phần",
+             highlight=True, font_pt=12)
 
-    add_card(s10, Inches(6.8), Inches(1.6), Inches(5.7), h10,
-             "Kế hoạch triển khai nửa cuối học kỳ (Tuần 5 – Tuần 8)",
+    add_image_frame(s10, IMG_WEB, Inches(7.05), Inches(1.35), Inches(5.63), Inches(3.8),
+                    "Demo trực tiếp tại: https://smartdoor-nhom13-data.vercel.app")
+
+    add_card(s10, Inches(7.05), Inches(5.3), Inches(5.63), Inches(1.55),
+             "Cảm ơn Thầy/Cô và các bạn đã lắng nghe!",
              [
-                 "Tuần 5: Nhận mạch in PCB gia công, tiến hành hàn linh kiện, đo kiểm tra ổn định điện áp 12V, 5V, 3.3V và tầng công suất kích khóa.",
-                 "Tuần 6: Gia công khung mô hình cửa cơ khí, gá lắp khóa chốt điện, đầu đọc vân tay, thẻ từ, bàn phím và màn hình LCD hoàn thiện.",
-                 "Tuần 7: Nạp firmware tích hợp, kiểm thử hoạt động liên tục 24/7, đo đạc độ trễ nhận dạng và tinh chỉnh thuật toán.",
-                 "Tuần 8: Thu thập số liệu thực nghiệm, hoàn thiện báo cáo thuyết minh đồ án chuẩn học thuật UET và chuẩn bị slide bảo vệ tốt nghiệp."
-             ],
-             subtitle="Lộ trình đưa mô hình vào hoạt động thực tế",
-             highlight=True)
+                 "Nhóm 13 xin phép chuyển sang phần Demo trực tiếp giao diện Web App & Chế độ bảo mật 2 lớp trên trình duyệt và nhận ý kiến đóng góp của Thầy/Cô."
+             ], font_pt=11.5)
 
-    # Save
     out_path = r"d:\WORKING PLACE\DoAn\slide_baocao\BaoCao_GiuaKy_Nhom13.pptx"
     prs.save(out_path)
-    print(f"Successfully generated PowerPoint presentation at: {out_path}")
+    print("Successfully generated visual PPTX at:", out_path)
 
 if __name__ == "__main__":
     create_presentation()
