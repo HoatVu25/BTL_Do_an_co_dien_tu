@@ -44,13 +44,13 @@
         <!-- Segmented Control Tabs -->
         <div class="tabs-bar">
             <nav class="segmented-tabs">
-                <button class="tab-btn active" data-tab="tab-dashboard">Tổng quan</button>
+                <button class="tab-btn" data-tab="tab-dashboard">Tổng quan</button>
                 <button class="tab-btn" data-tab="tab-logs">
                     Nhật ký ra vào
                     <span id="logCountBadge" class="tab-count">0</span>
                 </button>
                 <button class="tab-btn" data-tab="tab-users">Vân tay &amp; Thẻ RFID</button>
-                <button class="tab-btn" data-tab="tab-settings">Cấu hình &amp; Sơ đồ chân</button>
+                <button class="tab-btn" data-tab="tab-settings">Cấu hình hệ thống</button>
             </nav>
 
             <div class="system-pill">
@@ -314,15 +314,14 @@
             </div>
         </section>
 
-        <!-- ==================== TAB 4: CẤU HÌNH & SƠ ĐỒ CHÂN ==================== -->
+        <!-- ==================== TAB 4: CẤU HÌNH HỆ THỐNG ==================== -->
         <section id="tab-settings" class="tab-content">
-            <div class="two-col-grid">
-                <!-- Cột 1: Cấu hình Bảo Mật 1 Lớp / 2 Lớp & Keypad 4x4 -->
+            <div style="max-width: 680px; margin: 0 auto;">
                 <div class="card">
                     <div class="card-header">
                         <div>
-                            <h2 class="card-title">Cấu hình chế độ bảo mật &amp; Khóa</h2>
-                            <p class="card-subtitle">Lựa chọn chế độ xác thực 1 lớp hoặc 2 lớp (2FA)</p>
+                            <h2 class="card-title">Cấu hình chế độ bảo mật &amp; Hệ thống</h2>
+                            <p class="card-subtitle">Thiết lập xác thực 1 lớp / 2 lớp, mật khẩu Keypad và thời gian đóng cửa</p>
                         </div>
                     </div>
 
@@ -364,62 +363,8 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Lưu cấu hình</button>
+                        <button type="submit" class="btn btn-primary btn-full">Lưu cấu hình hệ thống</button>
                     </form>
-                </div>
-
-                <!-- Cột 2: Sơ đồ kết nối chân PCB -->
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Sơ đồ kết nối chân ESP32 (PCB Pinout)</h2>
-                            <p class="card-subtitle">Thông số phần cứng đồng bộ với mạch in trung tâm</p>
-                        </div>
-                    </div>
-
-                    <div class="table-wrap">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Khối linh kiện</th>
-                                    <th>Chuẩn</th>
-                                    <th>Chân GPIO ESP32</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><strong>Vân tay AS608</strong></td>
-                                    <td>UART2</td>
-                                    <td><code>RX2: 16</code>, <code>TX2: 17</code></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>RFID RC522</strong></td>
-                                    <td>SPI (3.3V)</td>
-                                    <td><code>SS: 5</code>, <code>SCK: 18</code>, <code>MOSI: 23</code>, <code>MISO: 19</code>, <code>RST: 4</code></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Màn hình LCD</strong></td>
-                                    <td>I2C (0x27)</td>
-                                    <td><code>SDA: 21</code>, <code>SCL: 22</code></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Khóa điện 12V</strong></td>
-                                    <td>Relay / MOSFET</td>
-                                    <td><code>GPIO 2</code></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Keypad 4x4 (Hàng)</strong></td>
-                                    <td>Rows R1–R4</td>
-                                    <td><code>GPIO 13, 12, 14, 27</code></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Keypad 4x4 (Cột)</strong></td>
-                                    <td>Cols C1–C4</td>
-                                    <td><code>GPIO 26, 25, 33, 32</code></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
         </section>
