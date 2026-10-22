@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Access Control — Nhóm 13 (ESP32)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Navigation Bar (Shadcn Minimalist Style) -->
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>Smart Door Access</h1>
+                    <span>Nhóm 13 • Nguyễn Tuấn Sơn &amp; Vũ Hữu Hoạt</span>
+                </div>
+            </div>
+
+            <div class="topbar-right">
+                <span id="modeBadge" class="badge badge-neutral">Chế độ Mô phỏng</span>
+                <div class="conn-pill">
+                    <span class="status-dot online"></span>
+                    <span id="wsStatusText">Trực tuyến</span>
+                </div>
+                <button id="toggleSimBtn" class="btn btn-outline btn-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4m-2-2v4m7-1h.01m2.99-2h.01"/></svg>
+                    Test giả lập
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Segmented Control Tabs -->
+        <div class="tabs-bar">
+            <nav class="segmented-tabs">
+                <button class="tab-btn active" data-tab="tab-dashboard">Tổng quan</button>
+                <button class="tab-btn" data-tab="tab-logs">
+                    Nhật ký ra vào
+                    <span id="logCountBadge" class="tab-count">0</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-users">Vân tay &amp; Thẻ RFID</button>
+                <button class="tab-btn" data-tab="tab-settings">Cấu hình &amp; Sơ đồ chân</button>
+            </nav>
+
+            <div class="system-pill">
+                <span id="systemAlertBadge" class="badge badge-success">Hệ thống an toàn</span>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 1: TỔNG QUAN (DASHBOARD) ==================== -->
+        <section id="tab-dashboard" class="tab-content active">
+            <!-- 4 KPI Metric Cards -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-top">
+                        <span class="metric-label">Trạng thái khóa 12V</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    </div>
+                    <div id="metricDoorStatus" class="metric-value">Đang khóa</div>
+                    <div class="metric-sub">Chốt điện từ đóng an toàn</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-top">
+                        <span class="metric-label">Truy cập hợp lệ</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    </div>
+                    <div id="statValidCount" class="metric-value">0</div>
+                    <div class="metric-sub">Lượt mở cửa thành công</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-top">
+                        <span class="metric-label">Cảnh báo sai</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <div id="statInvalidCount" class="metric-value">0</div>
+                    <div class="metric-sub">Vân tay / Thẻ lạ / Sai PIN</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-top">
+                        <span class="metric-label">Định danh đã lưu</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <div class="metric-value"><span id="statFpRegistered">2</span> Vân tay • <span id="statRfidRegistered">2</span> Thẻ</div>
+                    <div class="metric-sub">Lưu trong Flash LittleFS</div>
+                </div>
+            </div>
+
+            <!-- Main Control Row -->
+            <div class="main-grid">
+                <!-- Cột trái: Điều khiển khóa cửa -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Điều khiển khóa cửa trung tâm</h2>
+                            <p class="card-subtitle">Điều khiển trực tiếp khóa chốt điện từ 12V qua Wi-Fi</p>
+                        </div>
+                    </div>
+
+                    <div class="lock-panel">
+                        <div id="lockRing" class="lock-indicator locked">
+                            <span id="lockIcon" class="lock-svg">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                </svg>
+                            </span>
+                        </div>
+
+                        <div class="lock-info">
+                            <div id="doorStateText" class="lock-state-label">CỬA ĐANG KHÓA</div>
+                            <p id="doorCountdownText" class="lock-state-desc">Chốt khóa điện từ 12V đang đóng</p>
+                        </div>
+
+                        <div class="lock-actions">
+                            <button id="btnRemoteUnlock" class="btn btn-primary btn-lg">
+                                Mở khóa từ xa
+                            </button>
+                            <button id="btnForceLock" class="btn btn-danger btn-lg" style="display: none;">
+                                Khóa ngay lập tức
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="last-activity">
+                        <div class="activity-label">Sự kiện gần nhất</div>
+                        <div class="activity-row">
+                            <span id="lastEventTitle" class="activity-title">Chưa có sự kiện mới</span>
+                            <span id="lastEventTime" class="activity-meta">Sẵn sàng nhận tín hiệu</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cột phải: Màn hình LCD 16x2 tại cửa + Hoạt động gần đây -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Màn hình hiển thị tại cửa (LCD 16x2)</h2>
+                            <p class="card-subtitle">Nội dung đang hiển thị thực tế trên màn hình I2C</p>
+                        </div>
+                        <span class="mono-tag">I2C • 0x27</span>
+                    </div>
+
+                    <div class="lcd-container">
+                        <div class="lcd-display">
+                            <div id="lcdLine1" class="lcd-row"> CUA BAO MAT 13 </div>
+                            <div id="lcdLine2" class="lcd-row">TRANG THAI: KHOA</div>
+                        </div>
+                    </div>
+
+                    <div class="sub-header">
+                        <h3>Hoạt động gần nhất</h3>
+                        <button class="btn-link" onclick="switchTab('tab-logs')">Xem tất cả &rarr;</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Thời gian</th>
+                                    <th>Phương thức</th>
+                                    <th>Người dùng / Chi tiết</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentLogsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: NHẬT KÝ RA VÀO ==================== -->
+        <section id="tab-logs" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Nhật ký lịch sử ra vào</h2>
+                        <p class="card-subtitle">Ghi nhận toàn bộ sự kiện từ Vân tay AS608, RFID RC522, Keypad 4x4 và Web</p>
+                    </div>
+                    <div class="header-controls">
+                        <select id="filterMethod" class="input select-sm">
+                            <option value="ALL">Tất cả phương thức</option>
+                            <option value="FINGERPRINT">Vân tay AS608</option>
+                            <option value="RFID">Thẻ RFID RC522</option>
+                            <option value="KEYPAD">Keypad 4x4</option>
+                            <option value="WEB">Mở từ Web</option>
+                        </select>
+                        <button id="btnExportCsv" class="btn btn-outline btn-sm">Xuất CSV</button>
+                        <button id="btnClearLogs" class="btn btn-outline-danger btn-sm">Xóa lịch sử</button>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>Thời gian</th>
+                                <th>Phương thức</th>
+                                <th>Người dùng / Chi tiết</th>
+                                <th>Kết quả</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fullLogsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: QUẢN LÝ VÂN TAY & RFID ==================== -->
+        <section id="tab-users" class="tab-content">
+            <div class="two-col-grid">
+                <!-- Cột 1: Vân tay AS608 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Cảm biến vân tay AS608</h2>
+                            <p class="card-subtitle">Quản lý ID vân tay lưu trong bộ nhớ quang học AS608 (1–127)</p>
+                        </div>
+                    </div>
+
+                    <form id="formAddFingerprint" class="form-box">
+                        <div class="form-row">
+                            <div class="field" style="width: 90px; flex-shrink: 0;">
+                                <label>ID (1-127)</label>
+                                <input type="number" id="fpIdInput" min="1" max="127" value="3" required class="input">
+                            </div>
+                            <div class="field" style="flex: 1;">
+                                <label>Họ tên &amp; Ghi chú</label>
+                                <input type="text" id="fpNameInput" placeholder="VD: Nguyễn Tuấn Sơn" required class="input">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">
+                            + Đăng ký mẫu vân tay mới
+                        </button>
+                    </form>
+
+                    <div id="fpEnrollProgress" class="notice-banner" style="display: none;">
+                        <span class="loader"></span>
+                        <span id="fpEnrollText">Đang chờ đặt ngón tay lên cảm biến AS608...</span>
+                    </div>
+
+                    <div class="table-wrap mt-16">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Người dùng</th>
+                                    <th>Ngày tạo</th>
+                                    <th style="text-align: right;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fpListBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cột 2: Thẻ từ RFID RC522 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Thẻ từ RFID RC522 (13.56MHz)</h2>
+                            <p class="card-subtitle">Danh sách mã UID thẻ từ và móc khóa NFC được cấp quyền</p>
+                        </div>
+                    </div>
+
+                    <form id="formAddRfid" class="form-box">
+                        <div class="form-row">
+                            <div class="field" style="flex: 1;">
+                                <label>Mã UID (Hex)</label>
+                                <div class="input-group">
+                                    <input type="text" id="rfidUidInput" placeholder="VD: A3:4F:8B:12" required class="input mono">
+                                    <button type="button" id="btnScanRfidLearn" class="btn btn-outline">Quét thẻ</button>
+                                </div>
+                            </div>
+                            <div class="field" style="flex: 1;">
+                                <label>Chủ thẻ</label>
+                                <input type="text" id="rfidNameInput" placeholder="VD: Vũ Hữu Hoạt" required class="input">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">
+                            + Thêm thẻ RFID hợp lệ
+                        </button>
+                    </form>
+
+                    <div class="table-wrap mt-16">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Mã UID</th>
+                                    <th>Chủ sở hữu</th>
+                                    <th>Ngày thêm</th>
+                                    <th style="text-align: right;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rfidListBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 4: CẤU HÌNH & SƠ ĐỒ CHÂN ==================== -->
+        <section id="tab-settings" class="tab-content">
+            <div class="two-col-grid">
+                <!-- Cột 1: Cấu hình Keypad 4x4 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Cấu hình mật khẩu Keypad 4x4 &amp; Khóa</h2>
+                            <p class="card-subtitle">Thiết lập mã PIN mở cửa và thời gian tự động đóng khóa</p>
+                        </div>
+                    </div>
+
+                    <form id="formSettings" class="stack-form">
+                        <div class="field">
+                            <label>Mã PIN bàn phím ma trận 4x4 (4–8 chữ số)</label>
+                            <div class="input-group">
+                                <input type="password" id="settingPinCode" value="123456" minlength="4" maxlength="8" required class="input mono">
+                                <button type="button" id="btnTogglePin" class="btn btn-outline">Hiện</button>
+                            </div>
+                            <span class="field-hint">Trên Keypad 4x4: Nhập mật khẩu rồi nhấn <code>#</code> hoặc <code>D</code> để mở khóa. Nhấn <code>*</code> để xóa, <code>C</code> để khóa nhanh.</span>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="field" style="flex: 1;">
+                                <label>Thời gian mở khóa (giây)</label>
+                                <input type="number" id="settingUnlockTime" min="2" max="30" value="5" required class="input">
+                            </div>
+                            <div class="field" style="flex: 1;">
+                                <label>Số lần nhập sai tối đa</label>
+                                <input type="number" id="settingMaxAttempts" min="3" max="10" value="5" required class="input">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Lưu cấu hình</button>
+                    </form>
+                </div>
+
+                <!-- Cột 2: Sơ đồ kết nối chân PCB -->
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Sơ đồ kết nối chân ESP32 (PCB Pinout)</h2>
+                            <p class="card-subtitle">Thông số phần cứng đồng bộ với mạch in trung tâm</p>
+                        </div>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Khối linh kiện</th>
+                                    <th>Chuẩn</th>
+                                    <th>Chân GPIO ESP32</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Vân tay AS608</strong></td>
+                                    <td>UART2</td>
+                                    <td><code>RX2: 16</code>, <code>TX2: 17</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>RFID RC522</strong></td>
+                                    <td>SPI (3.3V)</td>
+                                    <td><code>SS: 5</code>, <code>SCK: 18</code>, <code>MOSI: 23</code>, <code>MISO: 19</code>, <code>RST: 4</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Màn hình LCD</strong></td>
+                                    <td>I2C (0x27)</td>
+                                    <td><code>SDA: 21</code>, <code>SCL: 22</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Khóa điện 12V</strong></td>
+                                    <td>Relay / MOSFET</td>
+                                    <td><code>GPIO 2</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Keypad 4x4 (Hàng)</strong></td>
+                                    <td>Rows R1–R4</td>
+                                    <td><code>GPIO 13, 12, 14, 27</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Keypad 4x4 (Cột)</strong></td>
+                                    <td>Cols C1–C4</td>
+                                    <td><code>GPIO 26, 25, 33, 32</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ==================== BẢNG TEST GIẢ LẬP PHẦN CỨNG (KÉO THẢ DI CHUYỂN ĐƯỢC) ==================== -->
+    <aside id="simulatorPanel" class="sim-drawer hidden">
+        <div id="simDragHeader" class="sim-header" title="Giữ chuột để kéo di chuyển bảng">
+            <div class="sim-drag-title">
+                <svg class="grip-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
+                    <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
+                </svg>
+                <div>
+                    <strong>Bảng giả lập tín hiệu phần cứng</strong>
+                    <span>Giữ thanh này để kéo tới vị trí bất kỳ</span>
+                </div>
+            </div>
+            <div class="sim-header-btns">
+                <button id="minSimBtn" class="btn-icon" title="Thu gọn / Mở rộng">&ndash;</button>
+                <button id="closeSimBtn" class="btn-icon" title="Đóng">&times;</button>
+            </div>
+        </div>
+
+        <div id="simBodyContent" class="sim-content">
+            <div class="sim-group">
+                <label class="sim-label">Giả lập quẹt Vân tay / Thẻ từ</label>
+                <div class="sim-actions">
+                    <button class="btn btn-outline btn-sm" onclick="simFingerprint(true)">Vân tay đúng (Sơn)</button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="simFingerprint(false)">Vân tay sai</button>
+                    <button class="btn btn-outline btn-sm" onclick="simRfid(true)">Thẻ RFID đúng (Hoạt)</button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="simRfid(false)">Thẻ RFID lạ</button>
+                </div>
+            </div>
+
+            <div class="sim-group">
+                <label class="sim-label">Bàn phím ma trận 4x4 (Bấm để test LCD)</label>
+                <div class="keypad-grid">
+                    <button class="kp-key" onclick="simKeypadPress('1')">1</button>
+                    <button class="kp-key" onclick="simKeypadPress('2')">2</button>
+                    <button class="kp-key" onclick="simKeypadPress('3')">3</button>
+                    <button class="kp-key kp-fn" onclick="simKeypadPress('A')">A</button>
+
+                    <button class="kp-key" onclick="simKeypadPress('4')">4</button>
+                    <button class="kp-key" onclick="simKeypadPress('5')">5</button>
+                    <button class="kp-key" onclick="simKeypadPress('6')">6</button>
+                    <button class="kp-key kp-fn" onclick="simKeypadPress('B')">B</button>
+
+                    <button class="kp-key" onclick="simKeypadPress('7')">7</button>
+                    <button class="kp-key" onclick="simKeypadPress('8')">8</button>
+                    <button class="kp-key" onclick="simKeypadPress('9')">9</button>
+                    <button class="kp-key kp-fn" onclick="simKeypadPress('C')">C</button>
+
+                    <button class="kp-key kp-clear" onclick="simKeypadPress('*')">*</button>
+                    <button class="kp-key" onclick="simKeypadPress('0')">0</button>
+                    <button class="kp-key kp-enter" onclick="simKeypadPress('#')">#</button>
+                    <button class="kp-key kp-enter" onclick="simKeypadPress('D')">D</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
