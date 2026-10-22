@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slide Báo Cáo Tiến Độ Giữa Kỳ — Nhóm 13</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy-main: #0B2347;
+            --accent-blue: #10559A;
+            --bg-page: #0f172a;
+            --slide-bg: #ffffff;
+            --card-bg: #F8FAFC;
+            --card-border: #E2E8F0;
+            --text-dark: #0F172A;
+            --text-muted: #64748B;
+            --text-accent: #0284C7;
+            --success: #16A34A;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-page);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px 10px;
+        }
+
+        /* Top Bar */
+        .controls-bar {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            background: #1e293b;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+
+        .slide-counter {
+            font-size: 14px;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+
+        .slide-counter strong {
+            color: #ffffff;
+        }
+
+        .nav-btns {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: #334155;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn:hover {
+            background: #475569;
+        }
+
+        .btn-primary {
+            background: #0284c7;
+        }
+
+        .btn-primary:hover {
+            background: #0369a1;
+        }
+
+        /* Slide Stage (16:9 Widescreen) */
+        .slide-container {
+            width: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16 / 9;
+            background: var(--slide-bg);
+            color: var(--text-dark);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Slide Content Rules */
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 44px 56px 40px;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .slide.active {
+            display: flex;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.995); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Header in slides */
+        .slide-header {
+            border-top: 4px solid var(--accent-blue);
+            padding-top: 14px;
+            margin-bottom: 24px;
+        }
+
+        .slide-category {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent-blue);
+            margin-bottom: 4px;
+        }
+
+        .slide-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--navy-main);
+            letter-spacing: -0.02em;
+        }
+
+        /* Content Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            flex: 1;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .grid-2x2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 16px;
+            flex: 1;
+        }
+
+        /* Card Component */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            padding: 20px 22px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card.highlight {
+            background: #ffffff;
+            border-color: var(--accent-blue);
+            box-shadow: 0 4px 12px rgba(16, 85, 154, 0.06);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--navy-main);
+            margin-bottom: 4px;
+        }
+
+        .card.highlight .card-title {
+            color: var(--accent-blue);
+        }
+
+        .card-sub {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .card-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #334155;
+        }
+
+        .card-list li {
+            position: relative;
+            padding-left: 18px;
+        }
+
+        .card-list li::before {
+            content: "•";
+            position: absolute;
+            left: 4px;
+            top: 0;
+            color: var(--accent-blue);
+            font-weight: bold;
+            font-size: 16px;
+            line-height: 1.2;
+        }
+
+        .badge-tag {
+            display: inline-block;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        /* Footer */
+        .slide-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding-top: 14px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        /* Slide 1 - Cover */
+        .slide-cover {
+            background: var(--navy-main);
+            color: #ffffff;
+            padding: 56px 64px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 8px solid #38bdf8;
+        }
+
+        .cover-org {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: #93c5fd;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+
+        .cover-badge {
+            display: inline-block;
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .cover-title {
+            font-size: 34px;
+            font-weight: 800;
+            line-height: 1.25;
+            margin-bottom: 14px;
+            color: #ffffff;
+        }
+
+        .cover-subtitle {
+            font-size: 17px;
+            color: #cbd5e1;
+            margin-bottom: 40px;
+            max-width: 900px;
+            line-height: 1.5;
+        }
+
+        .cover-authors {
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            padding-top: 24px;
+            display: flex;
+            gap: 40px;
+        }
+
+        .author-col h4 {
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            margin-bottom: 6px;
+        }
+
+        .author-col p {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .author-col span {
+            font-size: 12px;
+            color: #cbd5e1;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Controls -->
+    <div class="controls-bar">
+        <div class="slide-counter">
+            Slide <strong id="currentSlideNum">1</strong> / <span id="totalSlideNum">10</span>
+        </div>
+        <div class="nav-btns">
+            <button class="btn" onclick="prevSlide()">◀ Trước (Phím ←)</button>
+            <button class="btn btn-primary" onclick="nextSlide()">Sau (Phím →) ▶</button>
+            <button class="btn" onclick="toggleFullscreen()">⛶ Toàn màn hình</button>
+            <a href="BaoCao_GiuaKy_Nhom13.pptx" download class="btn" style="text-decoration:none;">📥 Tải file .PPTX</a>
+        </div>
+    </div>
+
+    <!-- Slide Stage -->
+    <div class="slide-container" id="slideStage">
+
+        <!-- ==================== SLIDE 1: COVER ==================== -->
+        <div class="slide slide-cover active">
+            <div class="cover-org">TRƯỜNG ĐẠI HỌC CÔNG NGHỆ – ĐHQGHN • KHOA CƠ HỌC KỸ THUẬT VÀ TỰ ĐỘNG HÓA</div>
+            <div>
+                <span class="cover-badge">BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ</span>
+            </div>
+            <h1 class="cover-title">THIẾT KẾ MÔ HÌNH HỆ THỐNG CỬA BẢO MẬT ĐA PHƯƠNG THỨC XÁC THỰC</h1>
+            <p class="cover-subtitle">Tích hợp Sinh trắc học Vân tay AS608, Thẻ từ RFID RC522, Keypad 4x4 và Hệ thống Giám sát Realtime qua Web App ESP32</p>
+
+            <div class="cover-authors">
+                <div class="author-col">
+                    <h4>Đơn vị & Lớp</h4>
+                    <p>Nhóm 13</p>
+                    <span>Ngành CNKT Cơ điện tử</span>
+                </div>
+                <div class="author-col">
+                    <h4>Nguyễn Tuấn Sơn</h4>
+                    <p>Phần mềm & Web App</p>
+                    <span>Firmware ESP32, 2FA, Vercel</span>
+                </div>
+                <div class="author-col">
+                    <h4>Vũ Hữu Hoạt</h4>
+                    <p>Phần cứng & PCB</p>
+                    <span>Schematic, Layout 2 lớp, Cơ khí</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 2: TỔNG QUAN & MỤC TIÊU ==================== -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ</div>
+                <h2 class="slide-title">1. Tổng quan đề tài &amp; Mục tiêu nghiên cứu</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <span class="badge-tag">BỐI CẢNH THỰC TẾ</span>
+                    <h3 class="card-title">Đặt vấn đề &amp; Lý do chọn đề tài</h3>
+                    <p class="card-sub">Hạn chế của các hệ thống khóa truyền thống</p>
+                    <ul class="card-list">
+                        <li>Hệ thống khóa cơ học truyền thống tiềm ẩn nguy cơ sao chép chìa khóa và thiếu hoàn toàn khả năng ghi vết nhật ký ra vào.</li>
+                        <li>Các hệ thống cửa chỉ dùng 1 phương thức (chỉ thẻ từ hoặc chỉ mật mã) dễ gặp rủi ro khi rơi mất thẻ, lộ mật mã hoặc ngón tay bị trầy xước.</li>
+                        <li><strong>Giải pháp đề xuất:</strong> Xây dựng hệ thống bảo mật đa phương thức tại chỗ (Local Authentication) kết hợp đồng bộ Web App thời gian thực qua mạng Wi-Fi cục bộ.</li>
+                    </ul>
+                </div>
+                <div class="card highlight">
+                    <span class="badge-tag" style="background:#dcfce7;color:#15803d;">MỤC TIÊU KỸ THUẬT</span>
+                    <h3 class="card-title">Chỉ tiêu kỹ thuật cần đạt được</h3>
+                    <p class="card-sub">Yêu cầu cốt lõi hoàn thành đồ án</p>
+                    <ul class="card-list">
+                        <li><strong>Đa phương thức:</strong> Tích hợp đồng bộ 3 phương thức xác thực: Vân tay quang học (AS608), Thẻ từ RFID (RC522) và Bàn phím ma trận 4x4.</li>
+                        <li><strong>An ninh đa cấp:</strong> Hỗ trợ chế độ 1 lớp (mở nhanh) và chế độ 2 lớp (2FA: Vân tay + PIN, Thẻ + PIN, Vân tay + Thẻ).</li>
+                        <li><strong>Mạch in chuyên dụng:</strong> Thiết kế PCB 2 lớp tích hợp khối nguồn cách ly chống xung nhiễu và tầng công suất kích khóa chốt 12V.</li>
+                        <li><strong>Web App độc lập:</strong> Nhúng toàn bộ Web App vào Flash LittleFS của ESP32 qua WebSocket, không phụ thuộc máy chủ trung gian.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Nhóm 13: Nguyễn Tuấn Sơn - Vũ Hữu Hoạt</span>
+                <span>Slide 2 / 10</span>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 3: CẤU TRÚC HỆ THỐNG ==================== -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ</div>
+                <h2 class="slide-title">2. Cấu trúc tổng thể hệ thống (System Architecture)</h2>
+            </div>
+            <div class="grid-3">
+                <div class="card">
+                    <span class="badge-tag">KHỐI THU THẬP &amp; XÁC THỰC</span>
+                    <h3 class="card-title">Thiết bị Ngoại vi Tại Cửa</h3>
+                    <p class="card-sub">3 Phương thức xác thực độc lập</p>
+                    <ul class="card-list">
+                        <li><strong>Cảm biến vân tay quang học AS608:</strong> Giao tiếp UART TTL (57600 bps), lưu mẫu nội vi (ID 1-127).</li>
+                        <li><strong>Đầu đọc thẻ RFID RC522:</strong> Tần số 13.56 MHz, giao tiếp bus SPI, đọc thẻ S50 và móc khóa NFC.</li>
+                        <li><strong>Bàn phím ma trận 4x4:</strong> Quét ma trận 4 hàng x 4 cột (8 GPIO), hỗ trợ phím chức năng A, B, C, D, *, #.</li>
+                    </ul>
+                </div>
+                <div class="card highlight">
+                    <span class="badge-tag" style="background:#e0f2fe;color:#0369a1;">KHỐI ĐIỀU KHIỂN &amp; CHẤP HÀNH</span>
+                    <h3 class="card-title">Trung tâm Xử lý &amp; Khóa</h3>
+                    <p class="card-sub">Bộ não điều khiển &amp; Động học cửa</p>
+                    <ul class="card-list">
+                        <li><strong>Vi điều khiển trung tâm ESP32:</strong> Dual-core 240 MHz, xử lý State Machine không chặn (Non-blocking).</li>
+                        <li><strong>Màn hình LCD 16x2 (I2C 0x27):</strong> Phản hồi trạng thái, hướng dẫn nhập PIN và đếm ngược.</li>
+                        <li><strong>Cơ cấu chấp hành Khóa chốt 12V:</strong> Điều khiển qua Relay/MOSFET cách ly kèm Diode 1N4007 dập xung ngược.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <span class="badge-tag">KHỐI MẠNG &amp; QUẢN TRỊ</span>
+                    <h3 class="card-title">Giám sát &amp; Điều khiển Web</h3>
+                    <p class="card-sub">Kết nối không dây thời gian thực</p>
+                    <ul class="card-list">
+                        <li><strong>AsyncWebServer &amp; WebSocket:</strong> Nhúng trong Flash LittleFS, phản hồi sự kiện &lt; 100ms.</li>
+                        <li><strong>Tên miền nội bộ mDNS:</strong> Truy cập nhanh qua <code>http://smartdoor.local</code>.</li>
+                        <li><strong>Đám mây demo Vercel:</strong> Triển khai bản trực tuyến phục vụ kiểm thử và báo cáo.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Nhóm 13: Nguyễn Tuấn Sơn - Vũ Hữu Hoạt</span>
+                <span>Slide 3 / 10</span>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 4: KHẢO SÁT LINH KIỆN ==================== -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ</div>
+                <h2 class="slide-title">3. Khảo sát linh kiện &amp; Phân tích Datasheet chi tiết</h2>
+            </div>
+            <div class="grid-2x2">
+                <div class="card">
+                    <h3 class="card-title">Cảm biến vân tay quang học AS608</h3>
+                    <p class="card-sub">Chuẩn giao tiếp UART TTL • 57600 bps</p>
+                    <ul class="card-list">
+                        <li>Điện áp cấp: 3.3V – 5.0V DC; Dòng đỉnh: &lt; 120 mA.</li>
+                        <li>Độ phân giải: 500 DPI, thời gian nhận dạng mẫu: &lt; 1.0 giây.</li>
+                        <li>Tỷ lệ nhận sai (FAR): &lt; 0.001%; Tỷ lệ từ chối (FRR): &lt; 0.1%.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Module đọc thẻ từ RFID-RC522</h3>
+                    <p class="card-sub">Chuẩn giao tiếp SPI • Tần số 13.56 MHz</p>
+                    <ul class="card-list">
+                        <li><strong>Điện áp hoạt động: 3.3V DC</strong> (Tuyệt đối không cấp 5V gây hỏng chip).</li>
+                        <li>Dòng tiêu thụ: 13 – 26 mA; Khoảng cách đọc: 0 – 30 mm.</li>
+                        <li>Tương thích: Thẻ ISO/IEC 14443 Type A, Mifare S50, móc khóa NFC.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Bàn phím ma trận 4x4 &amp; Màn hình LCD I2C</h3>
+                    <p class="card-sub">Quét ma trận 8 GPIO &amp; Giao tiếp 2 dây I2C</p>
+                    <ul class="card-list">
+                        <li>Keypad 4x4: 16 phím cơ độ nảy cao, chống bám bụi, tuổi thọ &gt; 1 triệu lần bấm.</li>
+                        <li>LCD 16x2 + Ba lô PCF8574: Tiết kiệm từ 16 chân còn 2 chân I2C (SDA/SCL).</li>
+                        <li>Điện áp cấp LCD: 5V DC đảm bảo độ tương phản sáng rõ.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">Vi điều khiển ESP32 &amp; Khóa chốt điện 12V</h3>
+                    <p class="card-sub">Lõi xử lý Dual-core &amp; Cơ cấu chấp hành</p>
+                    <ul class="card-list">
+                        <li>ESP32-WROOM-32: Bộ nhớ Flash 4MB, tích hợp Wi-Fi 2.4GHz &amp; Bluetooth 4.2.</li>
+                        <li>Khóa chốt điện từ 12V: Dòng kích cuộn dây 0.8A – 1.0A (Fail-Secure).</li>
+                        <li>Mạch kích công suất: Relay/MOSFET kèm Diode 1N4007 dập xung ngược.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Nhóm 13: Nguyễn Tuấn Sơn - Vũ Hữu Hoạt</span>
+                <span>Slide 4 / 10</span>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 5: NGUYÊN LÝ & CHỐNG NHIỄU ==================== -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ</div>
+                <h2 class="slide-title">4. Quy hoạch sơ đồ chân ESP32 &amp; Giải pháp chống nhiễu</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <span class="badge-tag">BẢNG PHÂN BỔ CHÂN GPIO</span>
+                    <h3 class="card-title">Sơ đồ kết nối phần cứng đồng bộ</h3>
+                    <p class="card-sub">Tránh xung đột chân Bootloader &amp; Strapping Pins</p>
+                    <ul class="card-list">
+                        <li><strong>Vân tay AS608:</strong> RX2 &rarr; GPIO 16, TX2 &rarr; GPIO 17 (UART2 độc lập).</li>
+                        <li><strong>RFID RC522:</strong> SS:5, SCK:18, MOSI:23, MISO:19, RST:4 (Bus SPI).</li>
+                        <li><strong>Màn hình LCD:</strong> SDA &rarr; GPIO 21, SCL &rarr; GPIO 22 (Chuẩn I2C).</li>
+                        <li><strong>Khóa chốt 12V:</strong> Điều khiển kích mức HIGH qua GPIO 2.</li>
+                        <li><strong>Keypad 4x4 (8 chân):</strong>
+                            <br>&bull; Hàng R1–R4: GPIO 13, 12, 14, 27 (INPUT_PULLUP)
+                            <br>&bull; Cột C1–C4: GPIO 26, 25, 33, 32 (quét mức LOW)
+                        </li>
+                        <li><em>Không dùng các chân GPIO 34-39 (chỉ đọc) để tránh thiếu trở kéo.</em></li>
+                    </ul>
+                </div>
+                <div class="card highlight">
+                    <span class="badge-tag" style="background:#fee2e2;color:#b91c1c;">GIẢI PHÁP CHỐNG NHIỄU PHẦN CỨNG</span>
+                    <h3 class="card-title">Bảo vệ nguồn &amp; Ổn định hệ thống</h3>
+                    <p class="card-sub">Triệt tiêu sụt áp và xung điện áp ngược cảm ứng</p>
+                    <ul class="card-list">
+                        <li><strong>Tách tầng nguồn công suất &amp; vi điều khiển:</strong> Nguồn tổng 12V cấp khóa; hạ áp 5V cấp ESP32/LCD; hạ áp 3.3V cấp riêng RC522.</li>
+                        <li><strong>Lọc nguồn tức thời:</strong> Bố trí tụ hóa 470uF và tụ gốm 100nF gần chân VCC các module để bù sụt áp khi cuộn hút 12V đóng ngắt.</li>
+                        <li><strong>Diode dập xung ngược (Flyback Diode):</strong> Mắc Diode 1N4007 song song ngược cực khóa 12V triệt tiêu điện áp cảm ứng <code>e = -L(di/dt)</code>.</li>
+                        <li><strong>Cách ly quang:</strong> Dùng Optocoupler kích Relay/MOSFET ngăn dòng rò từ tải 12V gây reset ESP32.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Nhóm 13: Nguyễn Tuấn Sơn - Vũ Hữu Hoạt</span>
+                <span>Slide 5 / 10</span>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 6: TIẾN ĐỘ PCB ==================== -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ</div>
+                <h2 class="slide-title">5. Tiến độ thiết kế mạch in PCB (Phụ trách: Vũ Hữu Hoạt)</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <span class="badge-tag">KẾT QUẢ THIẾT KẾ</span>
+                    <h3 class="card-title">Hoàn thiện Schematic &amp; Layout PCB 2 lớp</h3>
+                    <p class="card-sub">Đo đạc Footprint thực tế &amp; Tối ưu đường mạch</p>
+                    <ul class="card-list">
+                        <li><strong>Đo đạc Footprint:</strong> Khảo sát và đo đạc chính xác kích thước chân cắm header 6 chân AS608, 8 chân RC522, header Keypad và Domino 12V.</li>
+                        <li><strong>Sơ đồ nguyên lý (Schematic):</strong> Liên kết toàn bộ 5 khối chức năng, tích hợp khối nguồn hạ áp và tầng kích khóa.</li>
+                        <li><strong>Layout mạch in 2 lớp (Double-layer):</strong>
+                            <br>&bull; Đường mạch công suất cấp khóa 12V được thiết kế bản rộng (&gt; 40 mil), chịu dòng đến 2A an toàn.
+                            <br>&bull; Phủ mass toàn bộ 2 mặt (GND Copper Pour) để triệt tiêu nhiễu cao tần Wi-Fi và RFID 13.56 MHz.
+                            <br>&bull; Đường tín hiệu SPI và UART đi song song khoảng cách hợp lý, giảm hiện tượng xuyên âm (Crosstalk).
+                        </li>
+                    </ul>
+                </div>
+                <div class="card highlight">
+                    <span class="badge-tag" style="background:#dcfce7;color:#15803d;">TRẠNG THÁI HIỆN TẠI</span>
+                    <h3 class="card-title">Tình trạng thực tế &amp; Kế hoạch gia công</h3>
+                    <p class="card-sub">Sẵn sàng bước vào giai đoạn lắp ráp cơ điện tử</p>
+                    <ul class="card-list">
+                        <li><strong>Linh kiện:</strong> Đã mua đủ 100% linh kiện theo danh mục (ESP32, AS608, RC522, Keypad 4x4, LCD I2C, Khóa 12V).</li>
+                        <li><strong>Trạng thái PCB:</strong> Đã hoàn tất kiểm tra quy tắc thiết kế (DRC) và xuất trọn bộ file Gerber gia công.</li>
+                        <li><strong>Kế hoạch triển khai sau giữa kỳ:</strong>
+                            <br>&bull; Nhận bo mạch PCB gia công từ nhà máy.
+                            <br>&bull; Hàn linh kiện và đo kiểm tra điện áp các điểm test point (12V, 5V, 3.3V).
+                            <br>&bull; Gia công cơ khí khung mô hình cửa gỗ/mica, gá lắp khóa chốt và cảm biến.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Nhóm 13: Nguyễn Tuấn Sơn - Vũ Hữu Hoạt</span>
+                <span>Slide 6 / 10</span>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 7: PHẦN MỀM NHÚNG ==================== -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ</div>
+                <h2 class="slide-title">6. Xây dựng phần mềm nhúng ESP32 (Phụ trách: Nguyễn Tuấn Sơn)</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <span class="badge-tag">KIẾN TRÚC FIRMWARE</span>
+                    <h3 class="card-title">Lập trình Non-blocking &amp; State Machine</h3>
+                    <p class="card-sub">Đảm bảo hệ thống phản hồi tức thì không treo đơ</p>
+                    <ul class="card-list">
+                        <li><strong>Loại bỏ hoàn toàn delay():</strong> Ứng dụng kỹ thuật định thời <code>millis()</code> và máy trạng thái hữu hạn (FSM).</li>
+                        <li><strong>Lập lịch quét đa tác vụ:</strong>
+                            <br>&bull; Quét ma trận Keypad 4x4: Thực thi liên tục theo từng chu kỳ vòng lặp, độ trễ nhận phím &lt; 5ms.
+                            <br>&bull; Quét RFID và Vân tay AS608: Thực thi theo chu kỳ định thời 80ms, tránh nghẽn CPU.
+                            <br>&bull; Đếm ngược đóng cửa tự động: Xử lý chạy nền song song với việc giữ kết nối WebSocket.
+                        </li>
+                    </ul>
+                </div>
+                <div class="card highlight">
+                    <span class="badge-tag" style="background:#e0f2fe;color:#0369a1;">HỆ THỐNG TỆP &amp; MẠNG</span>
+                    <h3 class="card-title">Flash LittleFS &amp; Giao tiếp Realtime</h3>
+                    <p class="card-sub">Lưu trữ bền vững &amp; Truy cập tiện lợi</p>
+                    <ul class="card-list">
+                        <li><strong>Phân vùng LittleFS:</strong> Lưu trữ toàn bộ mã nguồn Web App tĩnh (HTML, CSS, JS) và cơ sở dữ liệu cấu hình <code>config.json</code>.</li>
+                        <li><strong>Bảo toàn dữ liệu:</strong> Mọi thay đổi mã PIN, danh sách thẻ RFID và ID vân tay được ghi trực tiếp vào Flash, mất điện không bị mất.</li>
+                        <li><strong>Tên miền nội bộ mDNS (smartdoor.local):</strong> Người dùng chỉ cần gõ <code>http://smartdoor.local</code> là mở Web App trong mạng Wi-Fi mà không cần nhớ IP.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Nhóm 13: Nguyễn Tuấn Sơn - Vũ Hữu Hoạt</span>
+                <span>Slide 7 / 10</span>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 8: CƠ CHẾ BẢO MẬT 2FA ==================== -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ</div>
+                <h2 class="slide-title">7. Cơ chế bảo mật đa cấp độ (Xác thực 1 lớp &amp; 2FA)</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <span class="badge-tag">CHẾ ĐỘ 1 LỚP (SINGLE AUTH)</span>
+                    <h3 class="card-title">Tối ưu tốc độ mở cửa &amp; Tiện lợi</h3>
+                    <p class="card-sub">Phù hợp nhu cầu sử dụng thông thường</p>
+                    <ul class="card-list">
+                        <li><strong>Nguyên lý:</strong> Người dùng chỉ cần xác thực thành công 1 trong 3 phương thức là cửa mở ngay lập tức.</li>
+                        <li><strong>Phương thức hỗ trợ:</strong>
+                            <br>&bull; Quét Vân tay AS608 hợp lệ (khớp mẫu trong ID 1–127).
+                            <br>&bull; Quẹt Thẻ từ RFID RC522 hợp lệ (khớp UID đã lưu).
+                            <br>&bull; Nhập đúng mã PIN trên Keypad 4x4 rồi nhấn phím # hoặc D.
+                        </li>
+                        <li>Ứng dụng môi trường gia đình, văn phòng ra vào thường xuyên.</li>
+                    </ul>
+                </div>
+                <div class="card highlight">
+                    <span class="badge-tag" style="background:#fef3c7;color:#b45309;">CHẾ ĐỘ 2 LỚP (2FA)</span>
+                    <h3 class="card-title">An ninh cao cấp &amp; Cơ chế Timeout 15s</h3>
+                    <p class="card-sub">Bảo vệ khu vực quan trọng / Phòng thí nghiệm</p>
+                    <ul class="card-list">
+                        <li><strong>3 Tùy chọn 2FA cấu hình linh hoạt từ Web App:</strong>
+                            <br>1. Vân tay AS608 + Mã PIN Keypad 4x4
+                            <br>2. Thẻ từ RFID RC522 + Mã PIN Keypad 4x4
+                            <br>3. Vân tay AS608 + Thẻ từ RFID RC522
+                        </li>
+                        <li><strong>Quy trình xử lý phiên 2FA an toàn:</strong>
+                            <br>&bull; Xác thực lớp 1 đúng &rarr; Khóa chưa mở, LCD/Web hiển thị yêu cầu thực hiện lớp 2.
+                            <br>&bull; Kích hoạt bộ đếm thời gian Timeout 15 giây.
+                            <br>&bull; Nếu nhập đúng lớp 2 &rarr; Mở khóa. Quá 15s hoặc nhập sai &rarr; Hủy phiên ngay.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Nhóm 13: Nguyễn Tuấn Sơn - Vũ Hữu Hoạt</span>
+                <span>Slide 8 / 10</span>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 9: WEB APP & VERCEL ==================== -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ</div>
+                <h2 class="slide-title">8. Giao diện Web App quản lý &amp; Triển khai đám mây</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <span class="badge-tag">GIAO DIỆN HIỆN ĐẠI (SHADCN/UI)</span>
+                    <h3 class="card-title">Bố cục tối giản &amp; 4 Phân hệ chức năng</h3>
+                    <p class="card-sub">Trực quan, dễ dùng trên cả Smartphone và Máy tính</p>
+                    <ul class="card-list">
+                        <li><strong>Tổng quan (Dashboard):</strong> Trạng thái khóa trực quan, nút mở từ xa, màn hình LCD 16x2 phản chiếu thời gian thực (Live Mirror).</li>
+                        <li><strong>Nhật ký ra vào:</strong> Tự động đẩy sự kiện mới lên đầu bảng, bộ lọc theo phương thức và xuất file CSV.</li>
+                        <li><strong>Quản lý Vân tay &amp; RFID:</strong> Đăng ký vân tay mới, đọc thẻ nhanh từ RC522, xóa từng người dùng.</li>
+                        <li><strong>Cấu hình hệ thống:</strong> Đổi chế độ 1 lớp / 2 lớp, đổi PIN Keypad, chỉnh thời gian giữ mở khóa.</li>
+                    </ul>
+                </div>
+                <div class="card highlight">
+                    <span class="badge-tag" style="background:#dcfce7;color:#15803d;">TRIỂN KHAI VERCEL &amp; GIẢ LẬP</span>
+                    <h3 class="card-title">Cloud Deployment &amp; Draggable Simulator</h3>
+                    <p class="card-sub">Sẵn sàng trình chiếu demo trực tiếp tại buổi báo cáo</p>
+                    <ul class="card-list">
+                        <li><strong>Đã triển khai chính thức trên nền tảng Vercel:</strong>
+                            <br>&bull; Địa chỉ truy cập: <code>https://smartdoor-nhom13-data.vercel.app</code>
+                            <br>&bull; Đồng bộ liên tục qua kho GitHub: <code>tuansonuet197/smartdoor-nhom13</code>.
+                        </li>
+                        <li><strong>Bộ giả lập phần cứng kéo thả (Draggable Simulator):</strong>
+                            <br>&bull; Di chuyển tự do trên màn hình để không che giao diện.
+                            <br>&bull; Cho phép giả lập quét vân tay đúng/sai, quẹt thẻ RFID và bấm phím 4x4 ảo để test 100% quy trình 2FA.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Nhóm 13: Nguyễn Tuấn Sơn - Vũ Hữu Hoạt</span>
+                <span>Slide 9 / 10</span>
+            </div>
+        </div>
+
+        <!-- ==================== SLIDE 10: TỔNG KẾT TIẾN ĐỘ ==================== -->
+        <div class="slide">
+            <div class="slide-header">
+                <div class="slide-category">BÁO CÁO TIẾN ĐỘ GIỮA KỲ — ĐỒ ÁN CƠ ĐIỆN TỬ</div>
+                <h2 class="slide-title">9. Tổng kết tiến độ giữa kỳ &amp; Kế hoạch giai đoạn 2</h2>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <span class="badge-tag" style="background:#dcfce7;color:#15803d;">ĐÁNH GIÁ KẾT QUẢ GIỮA KỲ</span>
+                    <h3 class="card-title">Hoàn thành 100% mục tiêu Tuần 1 – Tuần 4</h3>
+                    <p class="card-sub">Đúng tiến độ đề ra trong đề cương đồ án</p>
+                    <ul class="card-list">
+                        <li><strong>Linh kiện &amp; Nghiên cứu:</strong> Đã mua đủ 100% linh kiện chính và phụ trợ. Nắm vững tập lệnh UART của AS608, giao thức SPI của RC522.</li>
+                        <li><strong>Thiết kế mạch in PCB:</strong> Hoàn thành 100% Schematic và Layout PCB 2 lớp, đã xuất file Gerber gửi gia công.</li>
+                        <li><strong>Phần mềm &amp; Web App:</strong> Hoàn thành firmware nhúng Non-blocking, cơ chế bảo mật 2FA, giao diện Web App và deploy thành công lên Vercel.</li>
+                    </ul>
+                </div>
+                <div class="card highlight">
+                    <span class="badge-tag" style="background:#e0f2fe;color:#0369a1;">KẾ HOẠCH GIAI ĐOẠN 2</span>
+                    <h3 class="card-title">Lộ trình triển khai Tuần 5 – Tuần 8</h3>
+                    <p class="card-sub">Đưa mô hình cơ điện tử vào hoạt động thực tế</p>
+                    <ul class="card-list">
+                        <li><strong>Tuần 5:</strong> Nhận bo mạch PCB, hàn linh kiện, đo kiểm tra điện áp nguồn 12V/5V/3.3V và tầng kích khóa.</li>
+                        <li><strong>Tuần 6:</strong> Gia công khung mô hình cửa cơ khí, gá lắp khóa chốt 12V, cảm biến AS608, RC522, Keypad 4x4 và LCD.</li>
+                        <li><strong>Tuần 7:</strong> Nạp firmware tích hợp, kiểm thử hoạt động liên tục 24/7, đo đạc độ trễ nhận dạng và tinh chỉnh thuật toán.</li>
+                        <li><strong>Tuần 8:</strong> Thu thập số liệu thực nghiệm, hoàn thiện báo cáo thuyết minh đồ án chuẩn UET và chuẩn bị slide bảo vệ.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Nhóm 13: Nguyễn Tuấn Sơn - Vũ Hữu Hoạt</span>
+                <span>Slide 10 / 10</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        document.getElementById('totalSlideNum').textContent = totalSlides;
+
+        function showSlide(index) {
+            slides.forEach((s, idx) => {
+                s.classList.toggle('active', idx === index);
+            });
+            document.getElementById('currentSlideNum').textContent = index + 1;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+
+        function toggleFullscreen() {
+            const elem = document.getElementById("slideStage");
+            if (!document.fullscreenElement) {
+                elem.requestFullscreen().catch(err => alert("Không thể bật toàn màn hình: " + err.message));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Bắt sự kiện bàn phím mũi tên trái / phải
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                prevSlide();
+            }
+        });
+    </script>
+</body>
+</html>
