@@ -60,8 +60,16 @@
 #define KP_COL4_PIN         32
 
 // ============================================================================
-// 3. HẰNG SỐ MẶC ĐỊNH HỆ THỐNG
+// 3. HẰNG SỐ MẶC ĐỊNH HỆ THỐNG & CHẾ ĐỘ BẢO MẬT (1 LỚP / 2 LỚP)
 // ============================================================================
+#define SEC_MODE_SINGLE             1     // 1 lớp: Bất kỳ Vân tay / RFID / Keypad đều mở
+#define SEC_MODE_DUAL_FP_PIN        2     // 2 lớp: Vân tay + Mật khẩu Keypad 4x4
+#define SEC_MODE_DUAL_RFID_PIN      3     // 2 lớp: Thẻ RFID + Mật khẩu Keypad 4x4
+#define SEC_MODE_DUAL_FP_RFID       4     // 2 lớp: Vân tay + Thẻ RFID
+
+#define DEFAULT_SECURITY_MODE       SEC_MODE_SINGLE
+#define DEFAULT_DUAL_TIMEOUT_SEC    15    // Thời gian chờ xác thực lớp thứ 2 (15s)
+
 #define DEFAULT_PIN_CODE            "123456"
 #define DEFAULT_UNLOCK_TIME_SEC     5
 #define DEFAULT_MAX_WRONG_ATTEMPTS  5

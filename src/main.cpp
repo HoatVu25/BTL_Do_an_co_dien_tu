@@ -76,6 +76,14 @@ struct LogEntry {
 String currentPinCode = DEFAULT_PIN_CODE;
 int unlockDurationSec = DEFAULT_UNLOCK_TIME_SEC;
 int maxWrongAttempts = DEFAULT_MAX_WRONG_ATTEMPTS;
+int securityMode = DEFAULT_SECURITY_MODE;
+int dualTimeoutSec = DEFAULT_DUAL_TIMEOUT_SEC;
+
+// Quản lý phiên xác thực 2 lớp (2FA Session)
+bool dualAuthActive = false;
+String dualAuthFirstMethod = "";
+String dualAuthUser = "";
+unsigned long dualAuthStartMs = 0;
 
 bool isDoorUnlocked = false;
 unsigned long doorUnlockStartMs = 0;
@@ -137,6 +145,8 @@ void loadConfigFromFlash() {
 
     JsonDocument doc;
     if (deserializeJson(doc, file) == DeserializationError::Ok) {
+        securityMode = doc["securityMode"] | DEFAULT_SECURITY_MODE;
+        dualTimeoutSec = doc["dualTimeoutSec"] | DEFAULT_DUAL_TIMEOUT_SEC;
         currentPinCode = doc["pinCode"] | DEFAULT_PIN_CODE;
         unlockDurationSec = doc["unlockDurationSec"] | DEFAULT_UNLOCK_TIME_SEC;
         maxWrongAttempts = doc["maxWrongAttempts"] | DEFAULT_MAX_WRONG_ATTEMPTS;
@@ -167,6 +177,8 @@ void saveConfigToFlash() {
     if (!file) return;
 
     JsonDocument doc;
+    doc["securityMode"] = securityMode;
+    doc["dualTimeoutSec"] = dualTimeoutSec;
     doc["pinCode"] = currentPinCode;
     doc["unlockDurationSec"] = unlockDurationSec;
     doc["maxWrongAttempts"] = maxWrongAttempts;
@@ -211,6 +223,8 @@ void broadcastFullState() {
     doc["unlockDurationSec"] = unlockDurationSec;
 
     JsonObject cfg = doc["config"].to<JsonObject>();
+    cfg["securityMode"] = securityMode;
+    cfg["dualTimeoutSec"] = dualTimeoutSec;
     cfg["pinCode"] = currentPinCode;
     cfg["unlockDurationSec"] = unlockDurationSec;
     cfg["maxWrongAttempts"] = maxWrongAttempts;
@@ -245,6 +259,13 @@ void broadcastFullState() {
     ws.textAll(out);
 }
 
+void cancelDualSessionESP() {
+    dualAuthActive = false;
+    dualAuthFirstMethod = "";
+    dualAuthUser = "";
+    dualAuthStartMs = 0;
+}
+
 void triggerAccessEvent(const String& method, const String& user, bool valid, const String& lcd1, const String& lcd2) {
     LogEntry entry = {getCurrentTimeStr(), method, user, valid};
     accessLogs.insert(accessLogs.begin(), entry);
@@ -271,6 +292,71 @@ void triggerAccessEvent(const String& method, const String& user, bool valid, co
     String out;
     serializeJson(doc, out);
     ws.textAll(out);
+}
+
+void handleVerification(const String& method, const String& user, bool valid, const String& defaultLcd1, const String& defaultLcd2) {
+    if (!valid) {
+        cancelDualSessionESP();
+        triggerAccessEvent(method, user, false, defaultLcd1, defaultLcd2);
+        return;
+    }
+
+    if (securityMode == SEC_MODE_SINGLE || method == "WEB") {
+        cancelDualSessionESP();
+        triggerAccessEvent(method, user, true, defaultLcd1, defaultLcd2);
+        return;
+    }
+
+    // Xác thực 2 lớp (2FA)
+    if (!dualAuthActive) {
+        bool stage1Ok = false;
+        String nextPrompt = "";
+
+        if (securityMode == SEC_MODE_DUAL_FP_PIN && method == "FINGERPRINT") {
+            stage1Ok = true;
+            nextPrompt = "NHAP PIN + #";
+        } else if (securityMode == SEC_MODE_DUAL_RFID_PIN && method == "RFID") {
+            stage1Ok = true;
+            nextPrompt = "NHAP PIN + #";
+        } else if (securityMode == SEC_MODE_DUAL_FP_RFID && (method == "FINGERPRINT" || method == "RFID")) {
+            stage1Ok = true;
+            nextPrompt = (method == "FINGERPRINT") ? "QUET THE RFID" : "QUET VAN TAY";
+        }
+
+        if (stage1Ok) {
+            dualAuthActive = true;
+            dualAuthFirstMethod = method;
+            dualAuthUser = user;
+            dualAuthStartMs = millis();
+            updateLcd("XAC THUC LOP 1 OK", nextPrompt);
+        } else {
+            String need = "YEU CAU 2 LOP";
+            if (securityMode == SEC_MODE_DUAL_FP_PIN) need = "VAN TAY TRUOC";
+            else if (securityMode == SEC_MODE_DUAL_RFID_PIN) need = "THE RFID TRUOC";
+            updateLcd("SAI THU TU!", need);
+        }
+    } else {
+        bool stage2Ok = false;
+        if (securityMode == SEC_MODE_DUAL_FP_PIN && dualAuthFirstMethod == "FINGERPRINT" && method == "KEYPAD") {
+            stage2Ok = true;
+        } else if (securityMode == SEC_MODE_DUAL_RFID_PIN && dualAuthFirstMethod == "RFID" && method == "KEYPAD") {
+            stage2Ok = true;
+        } else if (securityMode == SEC_MODE_DUAL_FP_RFID && (
+            (dualAuthFirstMethod == "FINGERPRINT" && method == "RFID") ||
+            (dualAuthFirstMethod == "RFID" && method == "FINGERPRINT")
+        )) {
+            stage2Ok = true;
+        }
+
+        if (stage2Ok) {
+            String combined = dualAuthUser + " + " + method;
+            cancelDualSessionESP();
+            triggerAccessEvent("2FA", combined, true, "XAC THUC 2 LOP OK", "XIN MOI VAO!");
+        } else {
+            cancelDualSessionESP();
+            triggerAccessEvent(method, "Lop 2 khong dung", false, "LOP 2 THAT BAI", "PHIEN BI HUY");
+        }
+    }
 }
 
 // ============================================================================
@@ -300,9 +386,9 @@ void handleKeypad4x4() {
         keypadInputBuffer = "";
 
         if (entered == currentPinCode) {
-            triggerAccessEvent("KEYPAD", "Nhập đúng PIN từ Keypad 4x4", true, "MAT KHAU DUNG!", "MO CUA KEYPAD");
+            handleVerification("KEYPAD", "Nhập đúng PIN Keypad 4x4", true, "MAT KHAU DUNG!", "MO CUA KEYPAD");
         } else {
-            triggerAccessEvent("KEYPAD", "Nhập sai PIN từ Keypad 4x4", false, "SAI MAT KHAU!", "VUI LONG THU LAI");
+            handleVerification("KEYPAD", "Nhập sai PIN Keypad 4x4", false, "SAI MAT KHAU!", "VUI LONG THU LAI");
         }
         return;
     }
@@ -353,12 +439,12 @@ void handleRfidRc522() {
     // Kiểm tra UID trong danh sách hợp lệ
     for (const auto& card : rfidList) {
         if (card.uid == uidStr) {
-            triggerAccessEvent("RFID", card.name + " (" + uidStr + ")", true, "THE TU HOP LE", card.name);
+            handleVerification("RFID", card.name + " (" + uidStr + ")", true, "THE TU HOP LE", card.name);
             return;
         }
     }
 
-    triggerAccessEvent("RFID", "Thẻ lạ (" + uidStr + ")", false, "THE KHONG HOP LE", uidStr);
+    handleVerification("RFID", "Thẻ lạ (" + uidStr + ")", false, "THE KHONG HOP LE", uidStr);
 }
 
 // ============================================================================
@@ -425,7 +511,7 @@ void handleFingerprintAs608() {
     if (finger.getImage() != FINGERPRINT_OK) return;
 
     if (finger.image2Tz() != FINGERPRINT_OK || finger.fingerFastSearch() != FINGERPRINT_OK) {
-        triggerAccessEvent("FINGERPRINT", "Vân tay không khớp AS608", false, "VAN TAY SAI!", "TU CHOI MO CUA");
+        handleVerification("FINGERPRINT", "Vân tay không khớp AS608", false, "VAN TAY SAI!", "TU CHOI MO CUA");
         return;
     }
 
@@ -438,7 +524,7 @@ void handleFingerprintAs608() {
         }
     }
 
-    triggerAccessEvent("FINGERPRINT", userName, true, "VAN TAY HOP LE", "ID #" + String(foundId) + " MOI VAO");
+    handleVerification("FINGERPRINT", userName, true, "VAN TAY HOP LE", "ID #" + String(foundId) + " MOI VAO");
 }
 
 // ============================================================================
@@ -465,6 +551,7 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
                 triggerAccessEvent("WEB", "Quản trị viên (Mở từ Web App)", true, "MO CUA TU WEB", "XIN MOI VAO!");
                 broadcastFullState();
             } else if (action == "FORCE_LOCK") {
+                cancelDualSessionESP();
                 setLockHardware(false);
                 updateLcd(" CUA BAO MAT 13 ", "TRANG THAI: KHOA");
                 broadcastFullState();
@@ -497,11 +584,14 @@ void onWsEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
                 saveConfigToFlash();
                 broadcastFullState();
             } else if (action == "SAVE_CONFIG") {
+                securityMode = doc["config"]["securityMode"] | securityMode;
+                dualTimeoutSec = doc["config"]["dualTimeoutSec"] | dualTimeoutSec;
                 currentPinCode = doc["config"]["pinCode"] | currentPinCode;
                 unlockDurationSec = doc["config"]["unlockDurationSec"] | unlockDurationSec;
                 maxWrongAttempts = doc["config"]["maxWrongAttempts"] | maxWrongAttempts;
+                cancelDualSessionESP();
                 saveConfigToFlash();
-                updateLcd("CAP NHAT PIN OK", "LUU FLASH XONG");
+                updateLcd("CAP NHAT CHE DO", "LUU FLASH XONG");
                 broadcastFullState();
             } else if (action == "CLEAR_LOGS") {
                 accessLogs.clear();
@@ -581,6 +671,15 @@ void setup() {
 
 void loop() {
     ws.cleanupClients();
+
+    // Hết thời gian chờ phiên 2 lớp (2FA Timeout)
+    if (dualAuthActive && (millis() - dualAuthStartMs >= (unsigned long)dualTimeoutSec * 1000UL)) {
+        cancelDualSessionESP();
+        updateLcd("HET THOI GIAN 2FA", "PHIEN BI HUY");
+        delay(1500);
+        updateLcd(" CUA BAO MAT 13 ", "TRANG THAI: KHOA");
+        broadcastFullState();
+    }
 
     // Tự động đóng khóa chốt 12V sau khi hết thời gian giữ mở
     if (isDoorUnlocked && (millis() - doorUnlockStartMs >= (unsigned long)unlockDurationSec * 1000UL)) {

@@ -1,4 +1,6 @@
 {
+  "securityMode": 1,
+  "dualTimeoutSec": 15,
   "pinCode": "123456",
   "unlockDurationSec": 5,
   "maxWrongAttempts": 5,

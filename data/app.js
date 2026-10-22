@@ -17,9 +17,19 @@ const state = {
     rfidLearningMode: false,
 
     config: {
+        securityMode: 1, // 1: 1 lớp, 2: FP+PIN, 3: RFID+PIN, 4: FP+RFID
+        dualTimeoutSec: 15,
         pinCode: "123456",
         unlockDurationSec: 5,
         maxWrongAttempts: 5
+    },
+
+    dualSession: {
+        active: false,
+        stage1Method: null,
+        user: null,
+        expiresAt: 0,
+        timer: null
     },
 
     fingerprints: [
@@ -286,16 +296,26 @@ function initEventListeners() {
         document.getElementById("btnTogglePin").textContent = isPass ? "Ẩn" : "Hiện";
     });
 
+    document.getElementById("settingSecMode").addEventListener("change", (e) => {
+        updateSecModeHint(parseInt(e.target.value, 10));
+    });
+
     document.getElementById("formSettings").addEventListener("submit", (e) => {
         e.preventDefault();
+        state.config.securityMode = parseInt(document.getElementById("settingSecMode").value, 10) || 1;
+        state.config.dualTimeoutSec = parseInt(document.getElementById("settingDualTimeout").value, 10) || 15;
         state.config.pinCode = document.getElementById("settingPinCode").value.trim();
         state.config.unlockDurationSec = parseInt(document.getElementById("settingUnlockTime").value, 10) || 5;
         state.config.maxWrongAttempts = parseInt(document.getElementById("settingMaxAttempts").value, 10) || 5;
 
+        // Reset bất kỳ phiên 2 lớp đang dang dở
+        cancelDualSession();
+
         saveLocalBackup();
         sendCommand({ action: "SAVE_CONFIG", config: state.config });
-        updateLcdScreen("CAP NHAT PIN OK", "LUU FLASH XONG");
-        showToast("Đã lưu cấu hình");
+        updateLcdScreen("CAP NHAT CHE DO", getSecModeLabelShort(state.config.securityMode));
+        renderAll();
+        showToast("Đã lưu cấu hình chế độ bảo mật");
     });
 
     const simDrawer = document.getElementById("simulatorPanel");
@@ -480,24 +500,130 @@ function updateLcdScreen(line1, line2) {
     document.getElementById("lcdLine2").textContent = pad16(line2);
 }
 
-// ==================== BỘ GIẢ LẬP PHẦN CỨNG ====================
+function cancelDualSession() {
+    if (state.dualSession.timer) {
+        clearTimeout(state.dualSession.timer);
+    }
+    state.dualSession = {
+        active: false,
+        stage1Method: null,
+        user: null,
+        expiresAt: 0,
+        timer: null
+    };
+}
+
+function handleAuthInput(method, user, valid, defaultLcd1, defaultLcd2) {
+    if (!valid) {
+        cancelDualSession();
+        recordAccessEvent(method, user, false, defaultLcd1 || "XAC THUC THAT BAI", defaultLcd2 || "TU CHOI TRUY CAP");
+        return;
+    }
+
+    const mode = state.config.securityMode || 1;
+
+    // Chế độ 1 LỚP hoặc Mở khóa từ xa Web -> Mở ngay
+    if (mode === 1 || method === "WEB") {
+        cancelDualSession();
+        recordAccessEvent(method, user, true, defaultLcd1 || "XAC THUC DUNG!", defaultLcd2 || "CUA DANG MO...");
+        return;
+    }
+
+    // ==================== CÁC CHẾ ĐỘ 2 LỚP (2FA) ====================
+    // Mode 2: Vân tay + PIN
+    // Mode 3: Thẻ RFID + PIN
+    // Mode 4: Vân tay + Thẻ RFID
+
+    if (!state.dualSession.active) {
+        // --- GIAI ĐOẠN 1: Kiểm tra phương thức đầu tiên có hợp lệ cho chế độ hiện tại không ---
+        let isStage1Valid = false;
+        let expectedNext = "";
+
+        if (mode === 2 && method === "FINGERPRINT") {
+            isStage1Valid = true;
+            expectedNext = "NHAP PIN + #";
+        } else if (mode === 3 && method === "RFID") {
+            isStage1Valid = true;
+            expectedNext = "NHAP PIN + #";
+        } else if (mode === 4 && (method === "FINGERPRINT" || method === "RFID")) {
+            isStage1Valid = true;
+            expectedNext = method === "FINGERPRINT" ? "QUET THE RFID" : "QUET VAN TAY";
+        }
+
+        if (isStage1Valid) {
+            state.dualSession.active = true;
+            state.dualSession.stage1Method = method;
+            state.dualSession.user = user;
+            state.dualSession.expiresAt = Date.now() + (state.config.dualTimeoutSec * 1000);
+
+            if (state.dualSession.timer) clearTimeout(state.dualSession.timer);
+            state.dualSession.timer = setTimeout(() => {
+                cancelDualSession();
+                updateLcdScreen("HET THOI GIAN 2FA", "PHIEN BI HUY");
+                showToast("Hết thời gian chờ xác thực lớp thứ 2!", "warning");
+                setTimeout(() => {
+                    if (!state.doorUnlocked) updateLcdScreen(" CUA BAO MAT 13 ", "TRANG THAI: KHOA");
+                }, 2000);
+            }, state.config.dualTimeoutSec * 1000);
+
+            updateLcdScreen("XAC THUC LOP 1 OK", expectedNext);
+            showToast(`Lớp 1 thành công: ${user}. Vui lòng thực hiện lớp 2 (${expectedNext})`);
+            return;
+        } else {
+            // Nhập sai thứ tự hoặc phương thức không đúng yêu cầu lớp 1
+            let needMethod = "";
+            if (mode === 2) needMethod = "Vân tay trước";
+            else if (mode === 3) needMethod = "Thẻ RFID trước";
+            else if (mode === 4) needMethod = "Vân tay hoặc Thẻ trước";
+            
+            updateLcdScreen("YEU CAU 2 LOP!", needMethod);
+            showToast(`Chế độ 2 lớp: Vui lòng xác thực ${needMethod}`, "warning");
+            return;
+        }
+    } else {
+        // --- GIAI ĐOẠN 2: Kiểm tra phương thức thứ hai ---
+        let isStage2Valid = false;
+        const prevMethod = state.dualSession.stage1Method;
+
+        if (mode === 2 && prevMethod === "FINGERPRINT" && method === "KEYPAD") {
+            isStage2Valid = true;
+        } else if (mode === 3 && prevMethod === "RFID" && method === "KEYPAD") {
+            isStage2Valid = true;
+        } else if (mode === 4 && (
+            (prevMethod === "FINGERPRINT" && method === "RFID") ||
+            (prevMethod === "RFID" && method === "FINGERPRINT")
+        )) {
+            isStage2Valid = true;
+        }
+
+        if (isStage2Valid) {
+            const combinedUser = `${state.dualSession.user} + ${getMethodLabel(method)}`;
+            cancelDualSession();
+            recordAccessEvent(`2FA (${getMethodLabelShort(prevMethod)}+${getMethodLabelShort(method)})`, combinedUser, true, "XAC THUC 2 LOP OK", "XIN MOI VAO!");
+        } else {
+            cancelDualSession();
+            recordAccessEvent(method, `Lớp 2 không đúng (${user})`, false, "LOP 2 SAI!", "PHIEN BI HUY");
+        }
+    }
+}
+
 function simFingerprint(isValid) {
     if (isValid) {
         const user = state.fingerprints[0]
             ? `${state.fingerprints[0].name} (ID #${state.fingerprints[0].id})`
             : "Nguyễn Tuấn Sơn (ID #1)";
-        recordAccessEvent("FINGERPRINT", user, true, "VAN TAY HOP LE", "XIN CHAO SON!");
+        handleAuthInput("FINGERPRINT", user, true, "VAN TAY HOP LE", "XIN CHAO SON!");
     } else {
-        recordAccessEvent("FINGERPRINT", "Vân tay không khớp AS608", false, "VAN TAY SAI!", "TU CHOI MO CUA");
+        handleAuthInput("FINGERPRINT", "Vân tay không khớp AS608", false, "VAN TAY SAI!", "TU CHOI MO CUA");
     }
 }
 
 function simRfid(isValid) {
     if (isValid) {
         const card = state.rfidCards[0] || { uid: "A3:4F:8B:12", name: "Vũ Hữu Hoạt" };
-        recordAccessEvent("RFID", `${card.name} (${card.uid})`, true, "THE TU HOP LE", `CHAO: ${card.name.substring(0, 9)}`);
+        handleAuthInput("RFID", `${card.name} (${card.uid})`, true, "THE TU HOP LE", `CHAO: ${card.name.substring(0, 9)}`);
     } else {
-        recordAccessEvent("RFID", "Thẻ lạ (UID: FF:09:A2:1C)", false, "THE KHONG HOP LE", "UID: FF:09:A2:1C");
+        handleAuthInput("RFID", "Thẻ lạ (UID: FF:09:A2:1C)", false, "THE KHONG HOP LE", "UID: FF:09:A2:1C");
     }
 }
 
@@ -510,6 +636,7 @@ function simKeypadPress(key) {
 
     if (key === "C") {
         state.keypadBuffer = "";
+        cancelDualSession();
         lockDoorNow();
         showToast("Đã khóa cửa từ phím C");
         return;
@@ -521,9 +648,9 @@ function simKeypadPress(key) {
         state.keypadBuffer = "";
 
         if (entered === state.config.pinCode) {
-            recordAccessEvent("KEYPAD", "Nhập đúng mã PIN từ Keypad 4x4", true, "MAT KHAU DUNG!", "MO CUA KEYPAD");
+            handleAuthInput("KEYPAD", "Nhập đúng mã PIN từ Keypad 4x4", true, "MAT KHAU DUNG!", "MO CUA KEYPAD");
         } else {
-            recordAccessEvent("KEYPAD", `Nhập sai PIN (${entered.length} số)`, false, "SAI MAT KHAU!", "VUI LONG THU LAI");
+            handleAuthInput("KEYPAD", `Nhập sai PIN (${entered.length} số)`, false, "SAI MAT KHAU!", "VUI LONG THU LAI");
         }
         return;
     }
@@ -653,9 +780,57 @@ function renderRfidCards() {
 }
 
 function renderSettingsForm() {
+    const mode = state.config.securityMode || 1;
+    document.getElementById("settingSecMode").value = mode;
+    document.getElementById("settingDualTimeout").value = state.config.dualTimeoutSec || 15;
     document.getElementById("settingPinCode").value = state.config.pinCode;
     document.getElementById("settingUnlockTime").value = state.config.unlockDurationSec;
     document.getElementById("settingMaxAttempts").value = state.config.maxWrongAttempts;
+
+    updateSecModeHint(mode);
+    const badge = document.getElementById("metricSecModeBadge");
+    if (badge) {
+        badge.textContent = `Chế độ: ${getSecModeLabelShort(mode)}`;
+    }
+}
+
+function updateSecModeHint(mode) {
+    const hint = document.getElementById("secModeDescription");
+    if (!hint) return;
+    switch (mode) {
+        case 1:
+            hint.textContent = "Chế độ 1 lớp: Người dùng chỉ cần 1 phương thức hợp lệ (Vân tay hoặc Thẻ RFID hoặc PIN) là cửa sẽ mở.";
+            break;
+        case 2:
+            hint.textContent = "Chế độ 2 lớp (2FA): Cần quét Vân tay hợp lệ TRƯỚC, sau đó nhập mã PIN trên Keypad 4x4 + # để mở cửa.";
+            break;
+        case 3:
+            hint.textContent = "Chế độ 2 lớp (2FA): Cần quẹt Thẻ RFID hợp lệ TRƯỚC, sau đó nhập mã PIN trên Keypad 4x4 + # để mở cửa.";
+            break;
+        case 4:
+            hint.textContent = "Chế độ 2 lớp (2FA): Cần quét đồng thời cả Vân tay hợp lệ và Thẻ RFID hợp lệ để mở cửa.";
+            break;
+    }
+}
+
+function getSecModeLabelShort(mode) {
+    switch (mode) {
+        case 1: return "1 Lớp";
+        case 2: return "2 Lớp (Vân tay + PIN)";
+        case 3: return "2 Lớp (Thẻ + PIN)";
+        case 4: return "2 Lớp (Vân tay + Thẻ)";
+        default: return "1 Lớp";
+    }
+}
+
+function getMethodLabelShort(method) {
+    switch (method) {
+        case "FINGERPRINT": return "Vân tay";
+        case "RFID": return "Thẻ RFID";
+        case "KEYPAD": return "Mã PIN";
+        case "WEB": return "Web";
+        default: return method;
+    }
 }
 
 function deleteFingerprint(id) {
