@@ -42,11 +42,6 @@ Hệ thống khóa cửa thông minh được xây dựng nhằm nâng cao độ
 ├── include/                 # Header files cấu hình chân GPIO và thư viện
 ├── src/                     # Mã nguồn Firmware vi điều khiển ESP32
 │   └── main.cpp             # Logic điều khiển chính, state machine non-blocking
-├── slide_baocao/            # Tài liệu và Slide báo cáo tiến độ
-│   ├── assets/              # Hình ảnh linh kiện thực tế, sơ đồ khối, layout PCB
-│   ├── BaoCao_GiuaKy_Nhom13.pptx # Slide thuyết trình PowerPoint chuẩn UET
-│   ├── generate_slides.py   # Script Python tự động sinh file trình chiếu
-│   └── slides.html          # Bộ slide trình chiếu trực quan trên trình duyệt
 ├── platformio.ini           # Cấu hình biên dịch PlatformIO cho ESP32 DevKit
 ├── vercel.json              # Cấu hình triển khai Web App lên Vercel Cloud
 └── README.md                # Tài liệu tổng quan dự án
@@ -72,10 +67,6 @@ Hệ thống khóa cửa thông minh được xây dựng nhằm nâng cao độ
 1. Cài đặt tiện ích mở rộng [PlatformIO IDE](https://platformio.org/) trên VS Code.
 2. Mở thư mục gốc của dự án.
 3. Kết nối ESP32 qua cáp Micro-USB và nhấn nút **Upload** (`Ctrl + Alt + U`).
-
-### Xem Slide Báo Cáo:
-- Mở file PowerPoint: [`slide_baocao/BaoCao_GiuaKy_Nhom13.pptx`](slide_baocao/BaoCao_GiuaKy_Nhom13.pptx)
-- Hoặc mở nhanh trên trình duyệt web: [`slide_baocao/slides.html`](slide_baocao/slides.html) (Dùng phím mũi tên `◀ / ▶` để chuyển trang, nhấn `F` để bật toàn màn hình).
 
 ---
 
