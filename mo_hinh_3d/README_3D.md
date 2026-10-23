@@ -13,8 +13,6 @@ Thư mục này chứa toàn bộ bản vẽ CAD 3D (`.STL`, `.SCAD`) và trình
 | `HopDieuKhien_NapTruoc_Cover.stl` | File in 3D **Nắp mặt trước** (`134 × 210 × 6 mm`) khoét sẵn lỗ bậc 2 tầng cho vân tay AS608, hốc âm mặt bích bàn phím `65 × 64 mm`, hốc âm mỏng `1.5 mm` cho RFID RC522 (`40 × 60 mm`), và lưới loa thông báo `Ø30 mm`. |
 | `HopDieuKhien_LapRap_Full.stl` | File 3D lắp ráp tổng thể nguyên cụm (gồm cả vỏ hộp và các khối linh kiện bên trong). |
 | `ThietKeHop_CuaBaoMat_Nhom13.scad` | File mã nguồn CAD tham số (OpenSCAD) dễ dàng tùy chỉnh kích thước. |
-| `generate_stl_models.py` | Script Python tự động sinh bộ file lưới 3D `.STL` chính xác theo kích thước kỹ thuật. |
-| `XemMoHinh3D_TuongTac.html` | Trình xem 3D tương tác trực tiếp trên trình duyệt (xoay 360°, tách lớp Exploded View, xuyên thấu X-Ray và bản vẽ mặt cắt kiểm tra khoảng trống 2D). |
 
 ---
 
