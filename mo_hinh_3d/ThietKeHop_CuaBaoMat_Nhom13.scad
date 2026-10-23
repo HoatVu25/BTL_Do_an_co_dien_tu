@@ -122,6 +122,10 @@ module base_enclosure() {
             rotate([90, 0, 0]) cylinder(r=4.2, h=wall*3, center=true);
         translate([22, -box_h/2 + wall/2, 16])
             rotate([90, 0, 0]) cylinder(r=3.2, h=wall*3, center=true);
+
+        // Lỗ luồn dây hông bên phải (Ø8mm) chạy thẳng sang Khóa chốt 12V trên khung cửa
+        translate([box_w/2 - wall/2, -40, 16])
+            rotate([0, 90, 0]) cylinder(r=4.0, h=wall*3, center=true);
     }
 
     // 4 Trụ bắt vít nắp hộp M3 ở 4 góc
