@@ -58,11 +58,12 @@ Hệ thống khóa cửa thông minh được xây dựng nhằm nâng cao độ
 ## 🖨️ 3. Thiết Kế Vỏ Hộp 3D & Cơ Khí (CAD / 3D Printing)
 
 Vỏ hộp điều khiển được thiết kế tham số tối ưu bằng OpenSCAD và xuất file lưới 3D `.STL` chất lượng cao, phục vụ gia công in 3D (FDM/SLA):
-- **Kích thước bao phủ:** $134.0 \times 210.0 \times 61.0\text{ mm}$ (Thân dưới sâu $55\text{ mm}$ + Nắp trên dày $6\text{ mm}$, thành vỏ dày $3\text{ mm}$).
-- **Bố cục lắp ráp chống va chạm (Zero-collision Layout):**
-  - **Khoang trên:** Cảm biến vân tay quang học AS608 (chiều dài thân $45\text{ mm}$, mặt khoét $15.6 \times 18.5\text{ mm}$, hốc bậc ôm thân $20.8 \times 23.6\text{ mm}$) và Module đọc thẻ từ RFID-RC522 ($40 \times 60\text{ mm}$, vách nhựa mặt trước $1.5\text{ mm}$ tối ưu xuyên sóng RF $13.56\text{ MHz}$).
-  - **Khoang dưới:** Mạch in trung tâm PCB ($100 \times 100\text{ mm}$) đặt dưới đáy kèm 4 trụ vít M3 tâm $92 \times 92\text{ mm}$ và 4 gờ chữ L cố định góc; phía nắp là Bàn phím ma trận ($65 \times 64\text{ mm}$) và Loa thông báo $\varnothing 30\text{ mm}$.
-  - **Khoảng hở an toàn:** Đáy thân AS608 cách mép trên PCB $30.2\text{ mm}$ và cách đáy hộp $13\text{ mm}$, tạo không gian luồn dây bus và tản nhiệt thông thoáng.
+- **Kích thước bao phủ:** $130.0 \times 210.0 \times 51.5\text{ mm}$ (Thân dưới sâu $48\text{ mm}$ + Nắp trên mỏng $3.5\text{ mm}$ giúp tiết kiệm tối đa nhựa in 3D và chi phí gia công).
+- **Bố cục lắp ráp công thái học (Ergonomic Layout):**
+  - **Hàng 1 (Trên cùng - Xác thực):** Cảm biến vân tay quang học AS608 ($15.6 \times 18.5\text{ mm}$) và Module đọc thẻ từ RFID-RC522 ($40 \times 60\text{ mm}$).
+  - **Hàng 2 (Ở giữa - Hiển thị):** Màn hình LCD 16x2 I2C đục hở cửa sổ $72.0 \times 27.0\text{ mm}$ kèm **4 trụ vít M3** (tâm $75.0 \times 31.0\text{ mm}$) ở mặt sau nắp để bắt chặt bo LCD.
+  - **Hàng 3 (Dưới cùng - Nhập mã PIN):** Bàn phím cứng ma trận $65 \times 64\text{ mm}$ đặt chính giữa cân đối tuyệt đối.
+  - **Đáy hộp:** Mạch in trung tâm PCB ($100 \times 100\text{ mm}$) đặt dưới đáy kèm 4 trụ vít M3 tâm $92 \times 92\text{ mm}$ và 4 gờ chữ L cố định góc; không gian trong hộp rộng rãi để đi dây cắm ESP32, Relay và Domino.
 - Chi tiết xem tại: [`mo_hinh_3d/README_3D.md`](mo_hinh_3d/README_3D.md)
 
 ---
