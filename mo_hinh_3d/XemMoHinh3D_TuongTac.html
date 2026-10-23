@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    canvas { touch-action: none; }
+  </style>
+</head>
+<body class="bg-transparent text-[var(--foreground)] antialiased p-2 select-none">
+  <div class="bg-[var(--card)] text-[var(--foreground)] border border-[var(--border)] rounded-xl p-3.5 shadow-sm">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-[var(--border)]">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 text-xs font-semibold rounded bg-[var(--primary)] text-[var(--primary-foreground)]">CAD 3D v3.0 - Chống Cấn 100%</span>
+          <h2 class="text-[var(--foreground)] font-semibold text-sm">Hộp Cửa Bảo Mật Nhóm 13 (134 × 210 × 61 mm)</h2>
+        </div>
+        <p class="text-[var(--muted-foreground)] text-xs mt-0.5">Đã tách khoang AS608 (sâu 45mm) khỏi PCB 100×100mm (cách 30.2mm) & tăng chiều sâu đáy lên 55mm</p>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button id="btnIso" class="px-2.5 py-1 text-xs font-medium rounded border border-[var(--border)] bg-[var(--accent)] text-[var(--foreground)] hover:opacity-90">3D Phối Cảnh</button>
+        <button id="btnSide3D" class="px-2.5 py-1 text-xs font-medium rounded border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:opacity-90">Góc Nghiêng Z</button>
+        <button id="btnBlueprint" class="px-2.5 py-1 text-xs font-medium rounded border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:opacity-90">Mặt Cắt & Kiểm Tra Chỗ Trống</button>
+        <button id="btnXray" class="px-2.5 py-1 text-xs font-medium rounded border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] hover:opacity-90">Xuyên Thấu: Bật</button>
+      </div>
+    </div>
+
+    <!-- Main Viewport + Side Spec Panel -->
+    <div class="grid grid-cols-12 gap-3 items-stretch">
+      <div class="col-span-8 relative rounded-lg border border-[var(--border)] bg-[var(--background)] overflow-hidden" style="height: 315px;">
+        <canvas id="cadCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+        <!-- Bottom overlay controls -->
+        <div id="explodeBar" class="absolute bottom-2 left-2 right-2 flex items-center gap-2 bg-[var(--card)]/90 backdrop-blur px-2.5 py-1.5 rounded-lg border border-[var(--border)]">
+          <span class="text-xs font-medium text-[var(--foreground)] whitespace-nowrap">Tách lớp (Explode):</span>
+          <input id="explodeSlider" type="range" min="0" max="100" value="25" class="w-full accent-[var(--primary)] cursor-pointer h-1.5" />
+          <span id="explodeVal" class="text-xs font-mono text-[var(--muted-foreground)] w-9 text-right">25%</span>
+        </div>
+      </div>
+
+      <!-- Right Specification & Clearance Summary -->
+      <div class="col-span-4 flex flex-col justify-between rounded-lg border border-[var(--border)] bg-[var(--background)] p-2.5" style="height: 315px;">
+        <div class="space-y-1.5 overflow-y-auto pr-0.5">
+          <div class="text-xs font-semibold text-[var(--foreground)] pb-1 border-b border-[var(--border)]">Kiểm tra khoảng trống lắp đặt</div>
+          
+          <label class="flex items-start gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked data-part="cover" class="partToggle mt-0.5" />
+            <span><strong style="color:#60a5fa">■ Nắp trước (134×210×6):</strong> Đủ rộng cho Keypad + Loa</span>
+          </label>
+          <label class="flex items-start gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked data-part="as608" class="partToggle mt-0.5" />
+            <span><strong style="color:#f97316">■ AS608 (sâu 45mm):</strong> Nằm khoang trên (Y=+58), cách đáy hộp 13mm, cách mép PCB 30.2mm</span>
+          </label>
+          <label class="flex items-start gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked data-part="rc522" class="partToggle mt-0.5" />
+            <span><strong style="color:#06b6d4">■ RFID RC522 (40×60):</strong> Âm trong nắp, chỉ dày 1.6mm</span>
+          </label>
+          <label class="flex items-start gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked data-part="keypad" class="partToggle mt-0.5" />
+            <span><strong style="color:#a855f7">■ Keypad (65×64):</strong> Cách mặt PCB bên dưới hẳn 32mm</span>
+          </label>
+          <label class="flex items-start gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked data-part="speaker" class="partToggle mt-0.5" />
+            <span><strong style="color:#eab308">■ Loa Ø30mm:</strong> Nằm gọn góc phải dưới (+39, -44)</span>
+          </label>
+          <label class="flex items-start gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked data-part="pcb" class="partToggle mt-0.5" />
+            <span><strong style="color:#22c55e">■ PCB 100×100mm:</strong> Nằm khoang dưới (Y=-34), dư 14mm mỗi bên hông để đi dây</span>
+          </label>
+          <label class="flex items-start gap-2 text-xs cursor-pointer">
+            <input type="checkbox" checked data-part="base" class="partToggle mt-0.5" />
+            <span><strong style="color:#94a3b8">■ Thân dưới (Sâu 55mm):</strong> Dư chỗ cắm ESP32 & giắc Dupont</span>
+          </label>
+        </div>
+
+        <div class="pt-2 border-t border-[var(--border)] flex flex-col gap-1">
+          <button id="btnAutoSpin" class="w-full py-1 text-xs font-medium rounded bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90">
+            Tự động xoay: Bật
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('cadCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let rotX = -0.38;
+    let rotY = 0.56;
+    let zoom = 1.22;
+    let explode = 0.25;
+    let xray = true;
+    let autoSpin = true;
+    let blueprintMode = false;
+    let isDragging = false;
+    let lastX = 0, lastY = 0;
+
+    const visibleParts = {
+      base: true,
+      pcb: true,
+      as608: true,
+      rc522: true,
+      keypad: true,
+      speaker: true,
+      cover: true
+    };
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function makeBoxFaces(x0, x1, y0, y1, z0, z1, color, alpha, part) {
+      const v = [
+        [x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],
+        [x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]
+      ];
+      const idx = [
+        [0,3,2,1], [4,5,6,7], [0,1,5,4],
+        [2,3,7,6], [0,4,7,3], [1,2,6,5]
+      ];
+      return idx.map(f => ({
+        verts: f.map(i => v[i]),
+        color,
+        alpha,
+        part
+      }));
+    }
+
+    function makeHollowBox(W, H, z0, z1, wall, color, alpha, part) {
+      const faces = [];
+      faces.push(...makeBoxFaces(-W/2, W/2, -H/2, H/2, z0, z0 + wall, color, alpha, part));
+      faces.push(...makeBoxFaces(-W/2, -W/2 + wall, -H/2, H/2, z0 + wall, z1, color, alpha, part));
+      faces.push(...makeBoxFaces(W/2 - wall, W/2, -H/2, H/2, z0 + wall, z1, color, alpha, part));
+      faces.push(...makeBoxFaces(-W/2 + wall, W/2 - wall, H/2 - wall, H/2, z0 + wall, z1, color, alpha, part));
+      faces.push(...makeBoxFaces(-W/2 + wall, W/2 - wall, -H/2, -H/2 + wall, z0 + wall, z1, color, alpha, part));
+      return faces;
+    }
+
+    function makeCoverWithCutouts(z0, z1, color, alpha) {
+      // W = 134 (-67..67), H = 210 (-105..105)
+      // AS608 hole at (-30, 58), size 15.6 x 18.5 -> x:[-37.8, -22.2], y:[48.75, 67.25]
+      // Keypad hole at (-20, -42), size 55 x 56 -> x:[-47.5, 7.5], y:[-70, -14]
+      const faces = [];
+      faces.push(...makeBoxFaces(-67, 67, 67.25, 105, z0, z1, color, alpha, 'cover'));
+      faces.push(...makeBoxFaces(-67, 67, -14, 48.75, z0, z1, color, alpha, 'cover'));
+      faces.push(...makeBoxFaces(-67, 67, -105, -70, z0, z1, color, alpha, 'cover'));
+      faces.push(...makeBoxFaces(-67, -37.8, 48.75, 67.25, z0, z1, color, alpha, 'cover'));
+      faces.push(...makeBoxFaces(-22.2, 67, 48.75, 67.25, z0, z1, color, alpha, 'cover'));
+      faces.push(...makeBoxFaces(-67, -47.5, -70, -14, z0, z1, color, alpha, 'cover'));
+      faces.push(...makeBoxFaces(7.5, 67, -70, -14, z0, z1, color, alpha, 'cover'));
+      return faces;
+    }
+
+    function buildScene() {
+      const faces = [];
+      const exp = explode * 65;
+      const pcbY = -34;
+
+      // 1. Base Enclosure (134 x 210 x 55 mm)
+      if (visibleParts.base) {
+        const zB = -exp * 0.55;
+        faces.push(...makeHollowBox(134, 210, zB, zB + 55, 3.0, '#64748b', xray ? 0.30 : 0.95, 'base'));
+        for (const ix of [-1, 1]) {
+          for (const iy of [-1, 1]) {
+            faces.push(...makeBoxFaces(ix*46-3.5, ix*46+3.5, pcbY + iy*46-3.5, pcbY + iy*46+3.5, zB+3.0, zB+8.0, '#94a3b8', 0.95, 'base'));
+          }
+        }
+      }
+
+      // 2. Main PCB (100 x 100 mm) at Y = -34 (spans Y = -84 .. +16)
+      if (visibleParts.pcb) {
+        const zP = 8.0;
+        faces.push(...makeBoxFaces(-50, 50, pcbY - 50, pcbY + 50, zP, zP + 1.8, '#16a34a', 0.96, 'pcb'));
+        // ESP32 module (14mm high on headers)
+        faces.push(...makeBoxFaces(-14, 14, pcbY - 26, pcbY + 26, zP + 1.8, zP + 14.0, '#1e293b', 0.98, 'pcb'));
+        // Relay & Buck blocks
+        faces.push(...makeBoxFaces(20, 42, pcbY - 42, pcbY - 12, zP + 1.8, zP + 16.0, '#2563eb', 0.95, 'pcb'));
+        faces.push(...makeBoxFaces(-42, -20, pcbY - 42, pcbY - 16, zP + 1.8, zP + 12.0, '#dc2626', 0.95, 'pcb'));
+      }
+
+      // 3. AS608 Fingerprint Sensor at (-30, +58) - 45mm deep!
+      if (visibleParts.as608) {
+        const zA = 16 + exp * 0.45;
+        // Full 41mm body + 4mm face = 45mm total length
+        faces.push(...makeBoxFaces(-30 - 10.2, -30 + 10.2, 58 - 11.65, 58 + 11.65, zA, zA + 41, '#c2410c', 0.95, 'as608'));
+        faces.push(...makeBoxFaces(-30 - 7.65, -30 + 7.65, 58 - 9.1, 58 + 9.1, zA + 41, zA + 45, '#f97316', 0.98, 'as608'));
+        faces.push(...makeBoxFaces(-30 - 7.5, -30 + 7.5, 58 - 8.5, 58 + 8.5, zA + 45, zA + 45.6, '#38bdf8', 0.95, 'as608'));
+      }
+
+      // 4. RFID RC522 (40 x 60 mm) at (+26, +58)
+      if (visibleParts.rc522) {
+        const zR = 52 + exp * 0.55;
+        faces.push(...makeBoxFaces(26 - 20, 26 + 20, 58 - 30, 58 + 30, zR, zR + 1.8, '#0284c7', 0.95, 'rc522'));
+      }
+
+      // 5. Matrix Keypad (65 x 64 mm) at (-20, -42)
+      if (visibleParts.keypad) {
+        const zK = 48 + exp * 0.65;
+        faces.push(...makeBoxFaces(-20 - 32.5, -20 + 32.5, -42 - 32.0, -42 + 32.0, zK, zK + 11.0, '#7e22ce', 0.95, 'keypad'));
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 3; c++) {
+            const kx = -20 + (c - 1) * 14.5;
+            const ky = -42 + (1.5 - r) * 13.0;
+            faces.push(...makeBoxFaces(kx - 4.5, kx + 4.5, ky - 4.2, ky + 4.2, zK + 11.0, zK + 13.8, '#f8fafc', 0.95, 'keypad'));
+          }
+        }
+      }
+
+      // 6. Speaker Ø30mm at (+39, -44)
+      if (visibleParts.speaker) {
+        const zS = 47 + exp * 0.5;
+        faces.push(...makeBoxFaces(39 - 14.5, 39 + 14.5, -44 - 14.5, -44 + 14.5, zS, zS + 8.0, '#ca8a04', 0.95, 'speaker'));
+      }
+
+      // 7. Front Cover Panel (134 x 210 x 6 mm) at Z = 55
+      if (visibleParts.cover) {
+        const zC = 55 + exp * 1.15;
+        const covAlpha = xray ? 0.25 : 0.88;
+        faces.push(...makeCoverWithCutouts(zC, zC + 6, '#3b82f6', covAlpha));
+        faces.push(...makeBoxFaces(26 - 19, 26 + 19, 58 - 29, 58 + 29, zC + 6.0, zC + 6.3, '#93c5fd', covAlpha, 'cover'));
+      }
+
+      return faces;
+    }
+
+    function rotatePoint(x, y, z) {
+      let zc = z - 28;
+      let x1 = x * Math.cos(rotY) + zc * Math.sin(rotY);
+      let z1 = -x * Math.sin(rotY) + zc * Math.cos(rotY);
+      let y2 = y * Math.cos(rotX) - z1 * Math.sin(rotX);
+      let z2 = y * Math.sin(rotX) + z1 * Math.cos(rotX);
+      return [x1, y2, z2];
+    }
+
+    function shadeColor(hex, factor) {
+      const num = parseInt(hex.replace('#', ''), 16);
+      let r = Math.min(255, Math.max(0, Math.round(((num >> 16) & 255) * factor)));
+      let g = Math.min(255, Math.max(0, Math.round(((num >> 8) & 255) * factor)));
+      let b = Math.min(255, Math.max(0, Math.round((num & 255) * factor)));
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function drawClearanceBlueprint(w, h) {
+      const isLight = document.documentElement.classList.contains('light');
+      ctx.fillStyle = isLight ? '#f8fafc' : '#0f172a';
+      ctx.fillRect(0, 0, w, h);
+
+      const scale = Math.min((w - 60) / 360, (h - 52) / 215);
+      const cy = h * 0.50;
+      const fg = isLight ? '#0f172a' : '#f1f5f9';
+
+      function mmRect(cx, cy, x, y, rw, rh, stroke, fill, dash = []) {
+        ctx.save();
+        ctx.setLineDash(dash);
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.3;
+        if (fill) {
+          ctx.fillStyle = fill;
+          ctx.fillRect(cx + (x - rw/2)*scale, cy - (y + rh/2)*scale, rw*scale, rh*scale);
+        }
+        ctx.strokeRect(cx + (x - rw/2)*scale, cy - (y + rh/2)*scale, rw*scale, rh*scale);
+        ctx.restore();
+      }
+
+      function labelText(x, y, txt, color, align = 'center') {
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.font = '600 10.5px sans-serif';
+        ctx.textAlign = align;
+        ctx.fillText(txt, x, y);
+        ctx.restore();
+      }
+
+      // 1. LEFT: MẶT TRƯỚC & ĐÁY (X-Y CLEARANCE)
+      const cx1 = w * 0.28;
+      mmRect(cx1, cy, 0, 0, 134, 210, '#64748b', 'rgba(100,116,139,0.06)');
+      mmRect(cx1, cy, 0, 0, 128, 204, '#64748b', null, [2, 2]);
+      labelText(cx1, cy - 109*scale, '1. MẶT BẰNG X-Y (134 × 210 mm)', '#3b82f6');
+
+      // PCB 100 x 100 at (0, -34) -> spans Y: -84 to +16
+      mmRect(cx1, cy, 0, -34, 100, 100, '#22c55e', 'rgba(34,197,94,0.16)');
+      labelText(cx1, cy + 10*scale, 'PCB 100×100 mm', '#22c55e');
+
+      // Keypad 65 x 64 at (-20, -42)
+      mmRect(cx1, cy, -20, -42, 65, 64, '#a855f7', 'rgba(168,85,247,0.16)', [3, 2]);
+      labelText(cx1 - 20*scale, cy + 44*scale, 'Keypad 65×64', '#a855f7');
+
+      // Speaker Ø30 at (+39, -44)
+      ctx.beginPath();
+      ctx.arc(cx1 + 39*scale, cy + 44*scale, 15*scale, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(234,179,8,0.22)';
+      ctx.fill();
+      ctx.strokeStyle = '#eab308';
+      ctx.stroke();
+      labelText(cx1 + 39*scale, cy + 44*scale + 3, 'Loa', '#eab308');
+
+      // AS608 at (-30, +58): body 20.8 x 23.6 -> bottom edge at Y = +46.2
+      mmRect(cx1, cy, -30, 58, 20.8, 23.6, '#f97316', 'rgba(249,115,22,0.25)');
+      labelText(cx1 - 30*scale, cy - 58*scale + 3, 'AS608', '#f97316');
+
+      // Clearance zone between AS608 (Y=+46.2) and PCB top edge (Y=+16) = 30.2mm!
+      mmRect(cx1, cy, -20, 31.1, 80, 30.2, '#10b981', 'rgba(16,185,129,0.12)', [2, 2]);
+      labelText(cx1 - 15*scale, cy - 31*scale + 3, '↕ Khoảng trống 30.2mm (Không đụng PCB!)', '#10b981');
+
+      // RC522 at (+26, +58): 40 x 60
+      mmRect(cx1, cy, 26, 58, 40, 60, '#06b6d4', 'rgba(6,182,212,0.18)', [3, 2]);
+      labelText(cx1 + 26*scale, cy - 58*scale + 3, 'RC522 40×60', '#06b6d4');
+
+      // 2. RIGHT: MẶT CẮT DỌC CHIỀU SÂU Z (Z-Y SIDE SECTION: 61 x 210 mm)
+      const cx2 = w * 0.74;
+      // Draw Z from -30.5 to +30.5 (representing Z = 0..61 mm)
+      const zShift = -30.5;
+      function zRect(z0, z1, y0, y1, stroke, fill, dash = []) {
+        const zw = z1 - z0;
+        const yh = y1 - y0;
+        const zMid = zShift + (z0 + z1)*0.5;
+        const yMid = (y0 + y1)*0.5;
+        mmRect(cx2, cy, zMid, yMid, zw, yh, stroke, fill, dash);
+      }
+
+      labelText(cx2, cy - 109*scale, '2. MẶT CẮT DỌC CHIỀU SÂU Z (Sâu 61 mm)', '#3b82f6');
+      // Base shell (Z: 0..55, Y: -105..105)
+      zRect(0, 55, -105, 105, '#64748b', 'rgba(100,116,139,0.08)');
+      // Cover shell (Z: 55..61, Y: -105..105)
+      zRect(55, 61, -105, 105, '#3b82f6', 'rgba(59,130,246,0.15)');
+      // Bottom wall (Z: 0..3)
+      zRect(0, 3, -105, 105, '#64748b', 'rgba(100,116,139,0.35)');
+
+      // PCB at Z: 8..9.6, Y: -84..+16
+      zRect(8, 10, -84, 16, '#22c55e', 'rgba(34,197,94,0.8)');
+      // ESP32 & Relay on PCB (Z: 10..25, Y: -70..0)
+      zRect(10, 25, -70, 0, '#10b981', 'rgba(16,185,129,0.28)');
+      labelText(cx2 + (zShift + 18)*scale, cy + 35*scale, 'PCB+ESP32', '#22c55e');
+
+      // Keypad in cover (Z: 45..61, Y: -74..-10)
+      zRect(45, 61, -74, -10, '#a855f7', 'rgba(168,85,247,0.35)');
+      labelText(cx2 + (zShift + 53)*scale, cy + 42*scale, 'Keypad', '#a855f7');
+
+      // Free wiring gap between ESP32 (Z=25) and Keypad (Z=45) = 20mm!
+      zRect(25, 45, -74, 10, '#eab308', 'rgba(234,179,8,0.12)', [2, 2]);
+      labelText(cx2 + (zShift + 35)*scale, cy + 12*scale, '↔ Trống 20mm đi dây', '#eab308');
+
+      // AS608 in upper bay (Z: 16..61, Y: 46.2..69.8) -> 45mm deep, 13mm gap to back wall!
+      zRect(16, 61, 46.2, 69.8, '#f97316', 'rgba(249,115,22,0.38)');
+      labelText(cx2 + (zShift + 38)*scale, cy - 58*scale, 'AS608 (Sâu 45mm)', '#f97316');
+      labelText(cx2 + (zShift + 9)*scale, cy - 80*scale, '← Dư 13mm cắm giắc AS608', '#f97316', 'left');
+
+      labelText(w * 0.5, h - 8, 'Kết luận: Cả 3 chiều X (134mm), Y (210mm), Z (61mm) đều dư khoảng trống lắp đặt & cắm dây!', fg);
+    }
+
+    function render() {
+      const w = canvas.width / window.devicePixelRatio;
+      const h = canvas.height / window.devicePixelRatio;
+      ctx.clearRect(0, 0, w, h);
+
+      if (blueprintMode) {
+        drawClearanceBlueprint(w, h);
+        return;
+      }
+
+      const isLight = document.documentElement.classList.contains('light');
+      ctx.strokeStyle = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (let gx = 0; gx < w; gx += 24) {
+        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+      }
+      for (let gy = 0; gy < h; gy += 24) {
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+      }
+
+      const faces = buildScene();
+      const projected = [];
+      const fov = 480;
+      const viewerDist = 400;
+
+      for (const f of faces) {
+        const tv = f.verts.map(v => rotatePoint(v[0], v[1], v[2]));
+        const avgZ = (tv[0][2] + tv[1][2] + tv[2][2] + tv[3][2]) * 0.25;
+
+        const ux = tv[1][0] - tv[0][0], uy = tv[1][1] - tv[0][1], uz = tv[1][2] - tv[0][2];
+        const vx = tv[2][0] - tv[0][0], vy = tv[2][1] - tv[0][1], vz = tv[2][2] - tv[0][2];
+        let nx = uy*vz - uz*vy, ny = uz*vx - ux*vz, nz = ux*vy - uy*vx;
+        const len = Math.hypot(nx, ny, nz) || 1;
+        nx /= len; ny /= len; nz /= len;
+
+        const light = 0.62 + 0.38 * Math.max(-0.3, (nx * 0.35 + ny * 0.45 + Math.abs(nz) * 0.8));
+
+        const pts2d = tv.map(p => {
+          const scale = (fov * zoom) / (viewerDist - p[2]);
+          return [w * 0.5 + p[0] * scale, h * 0.47 - p[1] * scale];
+        });
+
+        projected.push({
+          pts2d,
+          avgZ,
+          fill: shadeColor(f.color, light),
+          alpha: f.alpha
+        });
+      }
+
+      projected.sort((a, b) => a.avgZ - b.avgZ);
+
+      for (const p of projected) {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.moveTo(p.pts2d[0][0], p.pts2d[0][1]);
+        for (let i = 1; i < p.pts2d.length; i++) {
+          ctx.lineTo(p.pts2d[i][0], p.pts2d[i][1]);
+        }
+        ctx.closePath();
+        ctx.fillStyle = p.fill;
+        ctx.fill();
+        ctx.strokeStyle = isLight ? 'rgba(15,23,42,0.35)' : 'rgba(255,255,255,0.22)';
+        ctx.lineWidth = 0.75;
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function loop() {
+      if (autoSpin && !isDragging && !blueprintMode) {
+        rotY += 0.006;
+      }
+      render();
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    canvas.addEventListener('pointerdown', e => {
+      if (blueprintMode) return;
+      isDragging = true;
+      autoSpin = false;
+      document.getElementById('btnAutoSpin').textContent = 'Tự động xoay: Tắt';
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener('pointermove', e => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      rotY += dx * 0.01;
+      rotX = Math.max(-1.4, Math.min(1.4, rotX + dy * 0.01));
+    });
+    canvas.addEventListener('pointerup', () => { isDragging = false; });
+    canvas.addEventListener('wheel', e => {
+      if (blueprintMode) return;
+      e.preventDefault();
+      zoom = Math.max(0.7, Math.min(2.4, zoom * (e.deltaY < 0 ? 1.08 : 0.92)));
+    }, { passive: false });
+
+    const slider = document.getElementById('explodeSlider');
+    const explodeVal = document.getElementById('explodeVal');
+    slider.addEventListener('input', e => {
+      explode = parseInt(e.target.value, 10) / 100;
+      explodeVal.textContent = `${e.target.value}%`;
+    });
+
+    document.getElementById('btnIso').addEventListener('click', () => {
+      blueprintMode = false;
+      document.getElementById('explodeBar').style.display = 'flex';
+      autoSpin = false;
+      document.getElementById('btnAutoSpin').textContent = 'Tự động xoay: Tắt';
+      rotX = -0.38; rotY = 0.56; zoom = 1.22;
+    });
+    document.getElementById('btnSide3D').addEventListener('click', () => {
+      blueprintMode = false;
+      document.getElementById('explodeBar').style.display = 'flex';
+      autoSpin = false;
+      document.getElementById('btnAutoSpin').textContent = 'Tự động xoay: Tắt';
+      rotX = -0.15; rotY = -1.25; zoom = 1.25;
+      xray = true;
+      document.getElementById('btnXray').textContent = 'Xuyên Thấu: Bật';
+    });
+    document.getElementById('btnBlueprint').addEventListener('click', () => {
+      blueprintMode = !blueprintMode;
+      document.getElementById('explodeBar').style.display = blueprintMode ? 'none' : 'flex';
+    });
+    document.getElementById('btnXray').addEventListener('click', e => {
+      xray = !xray;
+      e.target.textContent = `Xuyên Thấu: ${xray ? 'Bật' : 'Tắt'}`;
+    });
+    document.getElementById('btnAutoSpin').addEventListener('click', e => {
+      blueprintMode = false;
+      document.getElementById('explodeBar').style.display = 'flex';
+      autoSpin = !autoSpin;
+      e.target.textContent = `Tự động xoay: ${autoSpin ? 'Bật' : 'Tắt'}`;
+    });
+
+    document.querySelectorAll('.partToggle').forEach(cb => {
+      cb.addEventListener('change', e => {
+        visibleParts[e.target.dataset.part] = e.target.checked;
+      });
+    });
+  </script>
+</body>
+</html>
