@@ -39,6 +39,12 @@ Hệ thống khóa cửa thông minh được xây dựng nhằm nâng cao độ
 │   ├── index.html           # Trang Dashboard giám sát
 │   ├── app.js               # Xử lý logic và API đồng bộ
 │   └── style.css            # Giao diện tối giản hiện đại (Shadcn UI style)
+├── mo_hinh_3d/              # Thiết kế CAD 3D vỏ hộp điều khiển trung tâm (.STL, .SCAD)
+│   ├── HopDieuKhien_ThanDuoi_Base.stl
+│   ├── HopDieuKhien_NapTruoc_Cover.stl
+│   ├── HopDieuKhien_LapRap_Full.stl
+│   ├── ThietKeHop_CuaBaoMat_Nhom13.scad
+│   └── README_3D.md         # Thuyết minh chi tiết kích thước & dung sai lắp ghép
 ├── include/                 # Header files cấu hình chân GPIO và thư viện
 ├── src/                     # Mã nguồn Firmware vi điều khiển ESP32
 │   └── main.cpp             # Logic điều khiển chính, state machine non-blocking
@@ -49,7 +55,19 @@ Hệ thống khóa cửa thông minh được xây dựng nhằm nâng cao độ
 
 ---
 
-## 🛠️ 3. Sơ Đồ Kết Nối Phần Cứng (ESP32 30-Pin)
+## 🖨️ 3. Thiết Kế Vỏ Hộp 3D & Cơ Khí (CAD / 3D Printing)
+
+Vỏ hộp điều khiển được thiết kế tham số tối ưu bằng OpenSCAD và xuất file lưới 3D `.STL` chất lượng cao, phục vụ gia công in 3D (FDM/SLA):
+- **Kích thước bao phủ:** $134.0 \times 210.0 \times 61.0\text{ mm}$ (Thân dưới sâu $55\text{ mm}$ + Nắp trên dày $6\text{ mm}$, thành vỏ dày $3\text{ mm}$).
+- **Bố cục lắp ráp chống va chạm (Zero-collision Layout):**
+  - **Khoang trên:** Cảm biến vân tay quang học AS608 (chiều dài thân $45\text{ mm}$, mặt khoét $15.6 \times 18.5\text{ mm}$, hốc bậc ôm thân $20.8 \times 23.6\text{ mm}$) và Module đọc thẻ từ RFID-RC522 ($40 \times 60\text{ mm}$, vách nhựa mặt trước $1.5\text{ mm}$ tối ưu xuyên sóng RF $13.56\text{ MHz}$).
+  - **Khoang dưới:** Mạch in trung tâm PCB ($100 \times 100\text{ mm}$) đặt dưới đáy kèm 4 trụ vít M3 tâm $92 \times 92\text{ mm}$ và 4 gờ chữ L cố định góc; phía nắp là Bàn phím ma trận ($65 \times 64\text{ mm}$) và Loa thông báo $\varnothing 30\text{ mm}$.
+  - **Khoảng hở an toàn:** Đáy thân AS608 cách mép trên PCB $30.2\text{ mm}$ và cách đáy hộp $13\text{ mm}$, tạo không gian luồn dây bus và tản nhiệt thông thoáng.
+- Chi tiết xem tại: [`mo_hinh_3d/README_3D.md`](mo_hinh_3d/README_3D.md)
+
+---
+
+## 🛠️ 4. Sơ Đồ Kết Nối Phần Cứng (ESP32 30-Pin)
 
 | Linh kiện / Module | Giao thức / Loại tín hiệu | Chân ESP32 tương ứng | Ghi chú |
 | :--- | :--- | :--- | :--- |
@@ -61,7 +79,7 @@ Hệ thống khóa cửa thông minh được xây dựng nhằm nâng cao độ
 
 ---
 
-## 🚀 4. Hướng Dẫn Nạp Code & Chạy Thử Nghiệm
+## 🚀 5. Hướng Dẫn Nạp Code & Chạy Thử Nghiệm
 
 ### Nạp Firmware cho ESP32:
 1. Cài đặt tiện ích mở rộng [PlatformIO IDE](https://platformio.org/) trên VS Code.
@@ -70,7 +88,7 @@ Hệ thống khóa cửa thông minh được xây dựng nhằm nâng cao độ
 
 ---
 
-## 🌐 5. Web App Trực Tuyến
+## 🌐 6. Web App Trực Tuyến
 
 Giao diện Web App điều khiển và mô phỏng đã được triển khai tại:  
 👉 **[https://smartdoor-nhom13-data.vercel.app](https://smartdoor-nhom13-data.vercel.app)**
